@@ -6,6 +6,7 @@ use scanner::Scanner;
 
 mod scanner;
 mod tokens;
+mod expression;
 
 fn main() {
     println!("Hello, world!");
