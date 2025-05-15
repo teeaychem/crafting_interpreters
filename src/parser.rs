@@ -192,7 +192,7 @@ impl Parser {
 
     fn unary(&mut self) -> Result<Expression, ParseError> {
         match self.token() {
-            None => todo!("No token"),
+            None => return Err(ParseError::MissingToken),
 
             Some(token) => {
                 let expr = match &token.instance {
@@ -222,7 +222,7 @@ impl Parser {
     fn primary(&mut self) -> Result<Expression, ParseError> {
         use crate::tokens::TokenInstance::*;
         match self.token() {
-            None => todo!("No token"),
+            None => return Err(ParseError::MissingToken),
 
             Some(token) => {
                 use crate::expression::*;
@@ -252,7 +252,6 @@ impl Parser {
                     }
 
                     _ => {
-                        dbg!(self.token());
                         return Err(ParseError::UnexpectedToken);
                     }
                 };
@@ -261,6 +260,26 @@ impl Parser {
                 Ok(expr)
             }
         }
+    }
+}
+
+impl Parser {
+    pub fn syncronise(&mut self) -> bool {
+        while let Some(token) = self.token() {
+            match &token.instance {
+                TokenInstance::Semicolon => {
+                    self.consume();
+                    return true;
+                }
+
+                _ => {
+                    self.consume();
+                    continue;
+                }
+            }
+        }
+
+        false
     }
 }
 
@@ -299,6 +318,37 @@ mod tests {
             Ok(expr) => assert_eq!(format!("{expr}"), "(/ 4 (* 3 (- 2)))"),
 
             Err(_) => panic!("Failed to parse {input}"),
+        }
+    }
+
+    #[test]
+    fn sync() {
+        let mut scanner = Scanner::default();
+        let input = "4 / ; + 2 2; 2 + 2";
+
+        scanner.scan(input);
+
+        let mut parser = Parser::from(scanner);
+        let expr = parser.expression();
+
+        match expr {
+            Ok(expr) => panic!("Expected parse error"),
+
+            Err(_) => loop {
+                match parser.expression() {
+                    Ok(expr) => {
+                        assert_eq!(format!("{expr}"), "(+ 2 2)");
+                        break;
+                    }
+                    Err(_) => {
+                        if parser.token().is_none() {
+                            panic!("Failed to sync before EOF");
+                        }
+
+                        parser.syncronise();
+                    }
+                }
+            },
         }
     }
 }
