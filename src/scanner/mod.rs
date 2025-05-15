@@ -1,8 +1,9 @@
+
 use std::{iter::Peekable, str::Chars};
 
 use crate::{
     Location,
-    tokens::{Token, TokenError, TokenInstance, Tokens},
+    token::{Token, TokenError, TokenInstance, Tokens},
 };
 
 pub struct Scanner {
