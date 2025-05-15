@@ -7,7 +7,8 @@ use scanner::Scanner;
 mod expression;
 mod parser;
 mod scanner;
-mod tokens;
+mod token;
+mod value;
 
 fn main() {
     println!("Hello, world!");

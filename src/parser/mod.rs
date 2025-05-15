@@ -1,7 +1,7 @@
 use crate::{
     expression::{Expression, UnaryOp},
     scanner::Scanner,
-    tokens::{Token, TokenInstance, Tokens},
+    token::{Token, TokenInstance, Tokens},
 };
 
 #[derive(Debug)]
@@ -220,7 +220,7 @@ impl Parser {
     }
 
     fn primary(&mut self) -> Result<Expression, ParseError> {
-        use crate::tokens::TokenInstance::*;
+        use crate::token::TokenInstance::*;
         match self.token() {
             None => return Err(ParseError::MissingToken),
 
