@@ -1,5 +1,6 @@
 use std::fmt::Display;
 
+#[derive(Debug)]
 pub enum Expression {
     Literal {
         l: Literal,
@@ -21,12 +22,25 @@ pub enum Expression {
     },
 }
 
+#[derive(Debug)]
 pub enum Literal {
     Number { n: f64 },
     String { s: String },
     True,
     False,
     Nil,
+}
+
+impl From<f64> for Literal {
+    fn from(value: f64) -> Self {
+        Literal::Number { n: value }
+    }
+}
+
+impl From<String> for Literal {
+    fn from(value: String) -> Self {
+        Literal::String { s: value }
+    }
 }
 
 impl Display for Literal {
@@ -41,8 +55,10 @@ impl Display for Literal {
     }
 }
 
+
+#[derive(Debug)]
 pub enum UnaryOp {
-    Dash,
+    Minus,
     Bang,
 }
 
@@ -51,18 +67,19 @@ impl Display for UnaryOp {
         match self {
             Self::Bang => write!(f, "!"),
 
-            Self::Dash => write!(f, "-"),
+            Self::Minus => write!(f, "-"),
         }
     }
 }
 
+#[derive(Debug)]
 pub enum BinaryOp {
     Eq,
     Neq,
     Lt,
     Leq,
     Gt,
-    Geg,
+    Geq,
     Plus,
     Minus,
     Star,
@@ -77,7 +94,7 @@ impl Display for BinaryOp {
             Self::Lt => write!(f, "<"),
             Self::Leq => write!(f, "<="),
             Self::Gt => write!(f, ">"),
-            Self::Geg => write!(f, ">="),
+            Self::Geq => write!(f, ">="),
             Self::Plus => write!(f, "+"),
             Self::Minus => write!(f, "-"),
             Self::Star => write!(f, "*"),
@@ -106,7 +123,7 @@ mod test {
         let ast = Expression::Binary {
             op: BinaryOp::Star,
             l: Box::new(Expression::Unary {
-                op: UnaryOp::Dash,
+                op: UnaryOp::Minus,
                 e: Box::new(Expression::Literal {
                     l: Literal::Number { n: 123_f64 },
                 }),

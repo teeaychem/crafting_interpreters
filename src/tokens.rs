@@ -1,5 +1,7 @@
 use crate::Location;
 
+pub type Tokens = Vec<Token>;
+
 #[derive(Debug, PartialEq)]
 pub struct Token {
     pub instance: TokenInstance,
@@ -60,8 +62,12 @@ pub enum TokenInstance {
 }
 
 impl Token {
-    fn new(instance: TokenInstance, location: Location) -> Self {
+    pub fn new(instance: TokenInstance, location: Location) -> Self {
         Token { instance, location }
+    }
+
+    pub fn is(&self, instance: TokenInstance) -> bool {
+        self.instance == instance
     }
 }
 
