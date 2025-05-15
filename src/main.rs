@@ -1,12 +1,13 @@
-#![allow(dead_code)]
+#![allow(dead_code, unused)]
 
 use std::io::BufRead;
 
 use scanner::Scanner;
 
+mod expression;
+mod parser;
 mod scanner;
 mod tokens;
-mod expression;
 
 fn main() {
     println!("Hello, world!");

@@ -2,12 +2,12 @@ use std::{iter::Peekable, str::Chars};
 
 use crate::{
     Location,
-    tokens::{Token, TokenError, TokenInstance},
+    tokens::{Token, TokenError, TokenInstance, Tokens},
 };
 
 pub struct Scanner {
-    location: Location,
-    tokens: Vec<Token>,
+    pub location: Location,
+    pub tokens: Tokens,
 }
 
 impl Default for Scanner {
@@ -178,6 +178,11 @@ impl Scanner {
 }
 
 impl Scanner {
+    pub fn scan<I: AsRef<str>>(&mut self, s: I) {
+        let mut chars = s.as_ref().chars().peekable();
+        while let Ok(true) = self.take_token(&mut chars) {}
+    }
+
     fn scan_punctuation() {}
 
     fn note_token(&mut self, instance: TokenInstance, advance: usize) {
@@ -188,7 +193,7 @@ impl Scanner {
         self.location.col += advance;
     }
 
-    fn take_token(&mut self, chars: &mut Peekable<Chars<'_>>) -> Result<bool, TokenError> {
+    pub fn take_token(&mut self, chars: &mut Peekable<Chars<'_>>) -> Result<bool, TokenError> {
         self.take_whitespace(chars);
 
         match chars.peek() {
@@ -199,10 +204,11 @@ impl Scanner {
                     '"' => self.take_string(chars)?,
 
                     '/' => {
+                        chars.next();
                         if let Some('/') = chars.peek() {
                             self.take_comment(chars);
                         } else {
-                            self.take_one_character(chars, TokenInstance::Slash)?
+                            self.note_token(TokenInstance::Slash, 1);
                         }
                     }
 
@@ -283,9 +289,7 @@ mod tests {
     #[test]
     fn scanner_basic_numeric() {
         let mut scanner = Scanner::default();
-        let s = "1 0.23\n  1.23";
-        let mut cs = s.chars().peekable();
-        while let Ok(true) = scanner.take_token(&mut cs) {}
+        scanner.scan("1 0.23\n  1.23");
 
         assert_eq!(
             scanner.tokens,
@@ -309,9 +313,9 @@ mod tests {
     #[test]
     fn scanner_basic_keyword() {
         let mut scanner = Scanner::default();
-        let s = "not (true and perhaps false)";
-        let mut cs = s.chars().peekable();
-        while let Ok(true) = scanner.take_token(&mut cs) {}
+        scanner.scan("not");
+        scanner.scan(" ");
+        scanner.scan("(true and perhaps false)");
 
         assert_eq!(
             scanner.tokens,
