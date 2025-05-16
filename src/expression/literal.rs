@@ -15,6 +15,13 @@ impl From<f64> for Literal {
     }
 }
 
+impl From<&str> for Literal {
+    fn from(value: &str) -> Self {
+        Literal::String { s: value.to_owned() }
+    }
+}
+
+
 impl From<String> for Literal {
     fn from(value: String) -> Self {
         Literal::String { s: value }
