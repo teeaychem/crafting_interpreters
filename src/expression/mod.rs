@@ -1,5 +1,6 @@
 use std::fmt::Display;
 
+mod evaluate;
 mod literal;
 pub use literal::Literal;
 
@@ -25,6 +26,11 @@ pub enum Expression {
     },
 }
 
+impl From<Literal> for Expression {
+    fn from(value: Literal) -> Self {
+        Expression::Literal { l: value }
+    }
+}
 
 
 #[derive(Debug)]
