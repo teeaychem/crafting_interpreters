@@ -1,8 +1,11 @@
 use std::fmt::Display;
 
 mod evaluate;
+
 mod literal;
 pub use literal::Literal;
+
+
 
 #[derive(Debug)]
 pub enum Expression {
@@ -113,5 +116,21 @@ mod test {
         };
 
         assert_eq!(format!("{ast}"), "(* (- 123) (group 45.67))");
+    }
+}
+
+
+
+impl Expression {
+    pub fn binary(op: BinaryOp, a: Expression, b: Expression) -> Self {
+        Expression::Binary {
+            op,
+            l: Box::new(a),
+            r: Box::new(b),
+        }
+    }
+
+    pub fn unary(op: UnaryOp, a: Expression) -> Self {
+        Expression::Unary { op, e: Box::new(a) }
     }
 }

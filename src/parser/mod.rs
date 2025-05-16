@@ -298,7 +298,7 @@ mod tests {
         let expr = parser.expression();
 
         match expr {
-            Ok(expr) => assert_eq!(format!("{expr}"), "(== (! True) False)"),
+            Ok(expr) => assert_eq!(format!("{expr}"), "(== (! true) false)"),
 
             Err(_) => panic!("Failed to parse {input}"),
         }
