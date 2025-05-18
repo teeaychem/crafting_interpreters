@@ -4,12 +4,9 @@ use std::io::BufRead;
 
 use scanner::Scanner;
 
-mod expression;
+mod ast;
 mod parser;
 mod scanner;
-mod statement;
-mod token;
-mod value;
 
 fn main() {
     println!("Hello, world!");
