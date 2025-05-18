@@ -41,8 +41,8 @@ impl std::cmp::PartialEq for Value {
 
 impl std::cmp::PartialOrd for Value {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        use Value::*;
         use std::cmp::Ordering::*;
+        use Value::*;
 
         match (self, other) {
             (Null, _) => None,
@@ -84,5 +84,19 @@ impl From<f64> for Value {
 impl From<bool> for Value {
     fn from(value: bool) -> Self {
         Self::Boolean { b: value }
+    }
+}
+
+impl std::fmt::Display for Value {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Value::Null => write!(f, "nil"),
+
+            Value::Boolean { b } => write!(f, "{b}"),
+
+            Value::String { s } => write!(f, "{s}"),
+
+            Value::Numeric { n } => write!(f, "{n}"),
+        }
     }
 }
