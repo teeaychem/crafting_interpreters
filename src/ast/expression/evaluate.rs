@@ -1,10 +1,12 @@
 use core::panic;
 
-use crate::value::{Evaluable, Value, ValueError};
-
 use super::{BinaryOp, Expression, Literal, UnaryOp};
+use crate::parser::{
+    evaluate::Evaluate,
+    value::{Value, ValueError},
+};
 
-impl Evaluable for Expression {
+impl Evaluate for Expression {
     fn evaluate_boolean(&self) -> Result<bool, ValueError> {
         match self.evaluate()?.to_numeric() {
             Ok(Value::Boolean { b }) => Ok(b),

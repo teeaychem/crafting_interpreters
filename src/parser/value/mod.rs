@@ -16,14 +16,6 @@ pub enum ValueError {
     InvalidConversion,
 }
 
-pub trait Evaluable {
-    fn evaluate(&self) -> Result<Value, ValueError>;
-
-    fn evaluate_boolean(&self) -> Result<bool, ValueError>;
-    fn evaluate_numeric(&self) -> Result<f64, ValueError>;
-    fn evaluate_string(&self) -> Result<String, ValueError>;
-}
-
 impl std::cmp::PartialEq for Value {
     fn eq(&self, other: &Self) -> bool {
         use Value::*;

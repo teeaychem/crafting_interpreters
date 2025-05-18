@@ -1,13 +1,9 @@
-use std::string::ParseError;
-
 use crate::{
-    expression::Expression,
-    value::{Evaluable, ValueError},
+    ast::expression::Expression,
+    parser::{evaluate::Evaluate, interpret::Interpret, value::ValueError},
 };
 
-mod interpret;
-
-type Statements = Vec<Statement>;
+pub type Statements = Vec<Statement>;
 
 #[derive(Debug)]
 pub enum Statement {
@@ -15,8 +11,8 @@ pub enum Statement {
     Print { e: Expression },
 }
 
-impl Statement {
-    pub fn interpret(&self) -> Result<(), ValueError> {
+impl Interpret for Statement {
+    fn interpret(&self) -> Result<(), ValueError> {
         match self {
             Statement::Print { e } => println!("{}", e.evaluate()?),
 

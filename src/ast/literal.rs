@@ -1,8 +1,6 @@
 use std::fmt::Display;
 
-use crate::value::Value;
-
-use super::Expression;
+use crate::{ast::expression::Expression, parser::value::Value};
 
 #[derive(Clone, Debug)]
 pub enum Literal {

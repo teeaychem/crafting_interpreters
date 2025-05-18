@@ -1,6 +1,10 @@
-use std::os::macos::raw::stat;
+use crate::ast::statement::Statements;
 
-use super::{Statement, Statements};
+use super::value::ValueError;
+
+pub trait Interpret {
+    fn interpret(&self) -> Result<(), ValueError>;
+}
 
 pub fn interpret(statements: &Statements) {
     for statement in statements {
@@ -10,7 +14,7 @@ pub fn interpret(statements: &Statements) {
 
 #[cfg(test)]
 mod tests {
-    use crate::{parser::Parser, scanner::Scanner, statement::interpret};
+    use crate::{parser::Parser, scanner::Scanner};
 
     use super::*;
 
