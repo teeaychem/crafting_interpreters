@@ -64,7 +64,17 @@ impl Evaluable for Expression {
                         _ => return Err(ValueError::ConflictingSubexpression),
                     },
 
-                    _ => todo!(),
+                    Gt => Value::from(l.evaluate_numeric()? > r.evaluate_numeric()?),
+
+                    Geq => Value::from(l.evaluate_numeric()? >= r.evaluate_numeric()?),
+
+                    Lt => Value::from(l.evaluate_numeric()? < r.evaluate_numeric()?),
+
+                    Leq => Value::from(l.evaluate_numeric()? <= r.evaluate_numeric()?),
+
+                    Eq => Value::from(l.evaluate()? == r.evaluate()?),
+
+                    Neq => Value::from(l.evaluate()? != r.evaluate()?),
                 }
             }
         };
@@ -113,5 +123,60 @@ mod test {
         let addition = Expression::binary(BinaryOp::Plus, a, b);
 
         assert_eq!(addition.evaluate(), Ok(Value::from("a string")));
+    }
+
+    #[test]
+    fn basic_comparison() {
+        let a_value = 64.0;
+        let b_value = 32.0;
+
+        let gt = Expression::binary(
+            BinaryOp::Gt,
+            Expression::from(a_value),
+            Expression::from(b_value),
+        );
+        let leq = Expression::binary(
+            BinaryOp::Leq,
+            Expression::from(a_value),
+            Expression::from(b_value),
+        );
+
+        assert_eq!(gt.evaluate(), Ok(Value::from(true)));
+        assert_eq!(leq.evaluate(), Ok(Value::from(false)));
+    }
+
+    #[test]
+    fn basic_equality() {
+        let a_value = 64.0;
+        let b_value = 32.0;
+
+        let eq_self = Expression::binary(
+            BinaryOp::Eq,
+            Expression::from(a_value),
+            Expression::from(a_value),
+        );
+
+        let eq_same = Expression::binary(
+            BinaryOp::Eq,
+            Expression::from(Expression::from("a")),
+            Expression::from(Expression::from("a")),
+        );
+
+        let neq = Expression::binary(
+            BinaryOp::Eq,
+            Expression::from(a_value),
+            Expression::from(b_value),
+        );
+
+        let neq_different_types = Expression::binary(
+            BinaryOp::Eq,
+            Expression::from("64.0"),
+            Expression::from(64.0),
+        );
+
+        assert_eq!(eq_self.evaluate(), Ok(Value::from(true)));
+        assert_eq!(eq_same.evaluate(), Ok(Value::from(true)));
+        assert_eq!(neq.evaluate(), Ok(Value::from(false)));
+        assert_eq!(neq_different_types.evaluate(), Ok(Value::from(false)));
     }
 }

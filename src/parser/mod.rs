@@ -1,7 +1,8 @@
 use crate::{
     expression::{Expression, UnaryOp},
     scanner::Scanner,
-    token::{Token, TokenInstance, Tokens},
+    statement::Statement,
+    token::{self, Token, TokenInstance, Tokens},
 };
 
 #[derive(Debug)]
@@ -9,11 +10,13 @@ pub enum ParseError {
     MismatchedParentheses,
     UnexpectedToken,
     MissingToken,
+    MissingEndStatement,
 }
 
 #[derive(Debug)]
 pub struct Parser {
     tokens: Tokens,
+    pub statements: Vec<Statement>,
     index: usize,
 }
 
@@ -21,6 +24,7 @@ impl From<Scanner> for Parser {
     fn from(value: Scanner) -> Self {
         Self {
             tokens: value.tokens,
+            statements: Vec::default(),
             index: 0,
         }
     }
@@ -34,9 +38,42 @@ impl Parser {
     fn consume(&mut self) {
         self.index += 1
     }
+
+    fn end_statement(&mut self) -> Result<(), ParseError> {
+        match self.token() {
+            Some(token) if token.instance == TokenInstance::Semicolon => {
+                self.index += 1;
+                Ok(())
+            }
+
+            _ => Err(ParseError::MissingEndStatement),
+        }
+    }
 }
 
 impl Parser {
+    pub fn parse(&mut self) {
+        self.statement();
+    }
+
+    fn statement(&mut self) -> Result<(), ParseError> {
+        while let Some(token) = self.token() {
+            use TokenInstance::*;
+
+            match token.instance {
+                Print => {
+                    self.consume();
+                    let expr = self.expression()?;
+                    self.statements.push(Statement::Print { e: expr });
+                }
+
+                _ => todo!(),
+            }
+        }
+
+        Ok(())
+    }
+
     fn expression(&mut self) -> Result<Expression, ParseError> {
         self.equality()
     }

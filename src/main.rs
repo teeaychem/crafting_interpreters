@@ -7,6 +7,7 @@ use scanner::Scanner;
 mod expression;
 mod parser;
 mod scanner;
+mod statement;
 mod token;
 mod value;
 
