@@ -1,6 +1,6 @@
 use crate::{
     ast::expression::Expression,
-    parser::{evaluate::Evaluate, interpret::Interpret, value::ValueError},
+    parser::{evaluate::Evaluate, value::ValueError},
 };
 
 pub type Statements = Vec<Statement>;
@@ -11,14 +11,3 @@ pub enum Statement {
     Print { e: Expression },
 }
 
-impl Interpret for Statement {
-    fn interpret(&self) -> Result<(), ValueError> {
-        match self {
-            Statement::Print { e } => println!("{}", e.evaluate()?),
-
-            _ => todo!(),
-        }
-
-        Ok(())
-    }
-}

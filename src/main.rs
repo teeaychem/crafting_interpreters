@@ -8,6 +8,7 @@ mod ast;
 mod location;
 mod parser;
 mod scanner;
+mod interpreter;
 
 fn main() {
     println!("Hello, world!");

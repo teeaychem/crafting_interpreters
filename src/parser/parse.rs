@@ -14,14 +14,14 @@ impl Parser {
         self.index += 1
     }
 
-    fn end_statement(&mut self) -> Result<(), ParseError> {
+    fn close_statement(&mut self) -> Result<(), ParseError> {
         match self.token() {
             Some(token) if token.instance == TokenInstance::Semicolon => {
                 self.index += 1;
                 Ok(())
             }
 
-            _ => Err(ParseError::MissingEndStatement),
+            _ => Err(ParseError::OpenStatement),
         }
     }
 }
@@ -40,9 +40,10 @@ impl Parser {
                     self.consume();
                     let expr = self.expression()?;
                     self.statements.push(Statement::Print { e: expr });
+                    self.close_statement()?;
                 }
 
-                _ => todo!(),
+                _ => todo!("{:?}", token.instance),
             }
         }
 
