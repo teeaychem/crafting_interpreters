@@ -1,6 +1,7 @@
 use crate::{
-    ast::statement::Statement,
+    ast::statement::{Statement, Statements},
     scanner::{
+        self,
         token::{self, Token, TokenInstance, Tokens},
         Scanner,
     },
@@ -21,7 +22,7 @@ pub enum ParseError {
 #[derive(Debug)]
 pub struct Parser {
     tokens: Tokens,
-    pub statements: Vec<Statement>,
+    statements: Statements,
     index: usize,
 }
 
@@ -32,6 +33,26 @@ impl From<Scanner> for Parser {
             statements: Vec::default(),
             index: 0,
         }
+    }
+}
+
+impl Default for Parser {
+    fn default() -> Self {
+        Parser {
+            tokens: Tokens::default(),
+            statements: Statements::default(),
+            index: 0,
+        }
+    }
+}
+
+impl Parser {
+    pub fn consume_scanner(&mut self, scanner: Scanner) {
+        self.tokens = scanner.tokens
+    }
+
+    pub fn statements(&self) -> &Statements {
+        &self.statements
     }
 }
 
