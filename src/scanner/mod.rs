@@ -55,6 +55,7 @@ impl Scanner {
                         },
                         length,
                     );
+                    chars.next();
                     break;
                 }
 
@@ -158,24 +159,17 @@ impl Scanner {
         Ok(())
     }
 
-    fn take_one_character(
+    fn take_characters(
         &mut self,
         chars: &mut Peekable<Chars<'_>>,
+        count: usize,
         instance: TokenInstance,
     ) -> Result<(), TokenError> {
-        self.note_token(instance, 1);
-        chars.next();
-        Ok(())
-    }
+        self.note_token(instance, count);
+        for _ in 0..count {
+            chars.next();
+        }
 
-    fn take_two_characters(
-        &mut self,
-        chars: &mut Peekable<Chars<'_>>,
-        instance: TokenInstance,
-    ) -> Result<(), TokenError> {
-        self.note_token(instance, 2);
-        chars.next();
-        chars.next();
         Ok(())
     }
 }
@@ -215,55 +209,59 @@ impl Scanner {
                         }
                     }
 
-                    '(' => self.take_one_character(chars, TokenInstance::ParenLeft)?,
+                    '(' => self.take_characters(chars, 1, TokenInstance::ParenLeft)?,
 
-                    ')' => self.take_one_character(chars, TokenInstance::ParenRight)?,
+                    ')' => self.take_characters(chars, 1, TokenInstance::ParenRight)?,
 
-                    '{' => self.take_one_character(chars, TokenInstance::BraceLeft)?,
+                    '{' => self.take_characters(chars, 1, TokenInstance::BraceLeft)?,
 
-                    '}' => self.take_one_character(chars, TokenInstance::BraceRight)?,
+                    '}' => self.take_characters(chars, 1, TokenInstance::BraceRight)?,
 
-                    ',' => self.take_one_character(chars, TokenInstance::Comma)?,
+                    ',' => self.take_characters(chars, 1, TokenInstance::Comma)?,
 
-                    '.' => self.take_one_character(chars, TokenInstance::Dot)?,
+                    '.' => self.take_characters(chars, 1, TokenInstance::Dot)?,
 
-                    '-' => self.take_one_character(chars, TokenInstance::Minus)?,
+                    '-' => self.take_characters(chars, 1, TokenInstance::Minus)?,
 
-                    '+' => self.take_one_character(chars, TokenInstance::Plus)?,
+                    '+' => self.take_characters(chars, 1, TokenInstance::Plus)?,
 
-                    ';' => self.take_one_character(chars, TokenInstance::Semicolon)?,
+                    ';' => self.take_characters(chars, 1, TokenInstance::Semicolon)?,
 
-                    '*' => self.take_one_character(chars, TokenInstance::Star)?,
+                    '*' => self.take_characters(chars, 1, TokenInstance::Star)?,
 
                     '!' => {
+                        chars.next();
                         if let Some('=') = chars.peek() {
-                            self.take_two_characters(chars, TokenInstance::BangEqual)?
+                            self.take_characters(chars, 1, TokenInstance::BangEqual)?
                         } else {
-                            self.take_one_character(chars, TokenInstance::Bang)?
+                            self.take_characters(chars, 0, TokenInstance::Bang)?
                         }
                     }
 
                     '=' => {
+                        chars.next();
                         if let Some('=') = chars.peek() {
-                            self.take_two_characters(chars, TokenInstance::EqualEqual)?
+                            self.take_characters(chars, 1, TokenInstance::EqualEqual)?
                         } else {
-                            self.take_one_character(chars, TokenInstance::Equal)?
+                            self.take_characters(chars, 0, TokenInstance::Equal)?
                         }
                     }
 
                     '<' => {
+                        chars.next();
                         if let Some('=') = chars.peek() {
-                            self.take_two_characters(chars, TokenInstance::LessEqual)?
+                            self.take_characters(chars, 1, TokenInstance::LessEqual)?
                         } else {
-                            self.take_one_character(chars, TokenInstance::Less)?
+                            self.take_characters(chars, 0, TokenInstance::Less)?
                         }
                     }
 
                     '>' => {
+                        chars.next();
                         if let Some('=') = chars.peek() {
-                            self.take_two_characters(chars, TokenInstance::GreaterEqual)?
+                            self.take_characters(chars, 1, TokenInstance::GreaterEqual)?
                         } else {
-                            self.take_one_character(chars, TokenInstance::Greater)?
+                            self.take_characters(chars, 0, TokenInstance::Greater)?
                         }
                     }
 
