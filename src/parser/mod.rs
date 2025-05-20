@@ -7,7 +7,7 @@ use crate::{
     },
 };
 
-pub mod evaluate;
+
 mod parse;
 pub mod value;
 
@@ -17,6 +17,7 @@ pub enum ParseError {
     UnexpectedToken,
     MissingToken,
     OpenStatement,
+    InvalidAsignee
 }
 
 #[derive(Debug)]
