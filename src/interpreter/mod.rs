@@ -52,32 +52,46 @@ mod tests {
 
     use super::*;
 
-    #[test]
-    fn print() {
-        let mut buffer = [0x20; 10];
+    fn test_io(input: &str, output: &str) {
+        let mut scanner = Scanner::default();
+        let mut parser = Parser::default();
 
-        let mut scannar = Scanner::default();
-        let input = "print 5 + 5; print 5 - 5; ";
-
-        scannar.scan(input);
-
-        let mut parser = Parser::from(scannar);
-
+        scanner.scan(input);
+        parser.consume_scanner(scanner);
         parser.parse();
 
-        let mut stream = BufWriter::new(buffer.as_mut());
-        // let mut stream = std::io::stdout();
+        let mut buffer = Vec::with_capacity(output.len());
+        let mut stream = BufWriter::new(&mut buffer);
 
         {
             let mut interpreter = Interpreter::new();
 
             interpreter.set_destination(&mut stream);
 
-            interpreter.interpret_all(&parser.statements);
+            interpreter.interpret_all(parser.statements());
         }
 
         let buffer_string = std::str::from_utf8(&stream.buffer());
 
-        assert_eq!("10\n0\n", buffer_string.expect("Failed to interpret"));
+        assert_eq!(output, buffer_string.expect("Failed to interpret").trim());
+    }
+
+    #[test]
+    fn print() {
+        let input = "print 5 + 5; print 5 - 5; ";
+        let output = "10\n0";
+        test_io(input, output);
+
+        let input = "print true;";
+        let output = "true";
+        test_io(input, output);
+
+        let input = "print !true;";
+        let output = "false";
+        test_io(input, output);
+
+        let input = "print \"print\";";
+        let output = "print";
+        test_io(input, output);
     }
 }

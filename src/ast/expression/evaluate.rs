@@ -8,7 +8,7 @@ use crate::parser::{
 
 impl Evaluate for Expression {
     fn evaluate_boolean(&self) -> Result<bool, ValueError> {
-        match self.evaluate()?.to_numeric() {
+        match self.evaluate()?.to_boolean() {
             Ok(Value::Boolean { b }) => Ok(b),
 
             _ => Err(ValueError::ConflictingSubexpression),
@@ -42,7 +42,7 @@ impl Evaluate for Expression {
                 match op {
                     Minus => Value::from(-e.evaluate_numeric()?),
 
-                    Bang => Value::from(!e.evaluate_boolean()?),
+                    Bang => Value::from(!(e.evaluate_boolean()?)),
                 }
             }
 
