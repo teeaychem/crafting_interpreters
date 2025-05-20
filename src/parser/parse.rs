@@ -1,6 +1,6 @@
 use crate::ast::expression::{BinaryOp, Expression, UnaryOp};
 use crate::ast::literal::Literal;
-use crate::scanner::token::Token;
+use crate::scanner::token::{self, Token};
 use crate::{ast::statement::Statement, scanner::token::TokenInstance};
 
 use super::{ParseError, Parser};
@@ -12,6 +12,15 @@ impl Parser {
 
     fn consume(&mut self) {
         self.index += 1
+    }
+
+    fn consume_specific(&mut self, instance: TokenInstance) -> Result<(), ParseError> {
+        if self.token().is_some_and(|t| t.instance == instance) {
+            self.index += 1;
+            Ok(())
+        } else {
+            Err(ParseError::MissingToken)
+        }
     }
 
     fn close_statement(&mut self) -> Result<(), ParseError> {
@@ -27,19 +36,44 @@ impl Parser {
 }
 
 impl Parser {
-    pub fn parse(&mut self) {
-        self.statement();
+    pub fn parse(&mut self) -> Result<(), ParseError> {
+        self.statement()
     }
 
     fn statement(&mut self) -> Result<(), ParseError> {
-        while let Some(token) = self.token() {
+        while let Some(token) = self.token() {            
             use TokenInstance::*;
+            dbg!(&token);
 
             match token.instance {
                 Print => {
                     self.consume();
                     let expr = self.expression()?;
                     self.statements.push(Statement::Print { e: expr });
+                    self.close_statement()?;
+                }
+
+                Var => {
+                    self.consume();
+
+                    let name_expression = self.expression()?;
+                    let name = match name_expression {
+                        Expression::Identifier {
+                            l: Literal::String { s },
+                        } => s,
+                        
+                        _ => {
+                            return Err(ParseError::InvalidAsignee);
+                        }
+                    };
+
+                    self.consume_specific(TokenInstance::Equal)?;
+                    let assignment = self.expression()?;
+
+                    self.statements
+                        .push(Statement::Declaration { name, assignment });
+
+
                     self.close_statement()?;
                 }
 
@@ -245,6 +279,10 @@ impl Parser {
 
                     Nil => Expression::Literal { l: Literal::Nil },
 
+                    Identifier { literal } => Expression::Identifier {
+                        l: Literal::from(literal.to_owned()),
+                    },
+
                     ParenLeft => {
                         self.consume();
                         let expr = self.expression()?;
@@ -268,6 +306,7 @@ impl Parser {
 
 impl Parser {
     pub fn syncronise(&mut self) -> bool {
+        println!("syncronising parser");
         while let Some(token) = self.token() {
             match &token.instance {
                 TokenInstance::Semicolon => {

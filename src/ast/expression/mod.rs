@@ -2,11 +2,15 @@ use std::fmt::Display;
 
 use super::literal::Literal;
 
-mod evaluate;
 
-#[derive(Debug)]
+
+#[derive(Debug, Clone)]
 pub enum Expression {
     Literal {
+        l: Literal,
+    },
+
+    Identifier {
         l: Literal,
     },
 
@@ -32,7 +36,7 @@ impl From<Literal> for Expression {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum UnaryOp {
     Minus,
     Bang,
@@ -48,7 +52,7 @@ impl Display for UnaryOp {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum BinaryOp {
     Eq,
     Neq,
@@ -83,6 +87,7 @@ impl Display for Expression {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Literal { l } => write!(f, "{l}"),
+            Self::Identifier { l } => write!(f, "{l}"),
             Self::Grouping { e } => write!(f, "(group {e})"),
             Self::Unary { op, e } => write!(f, "({op} {e})"),
             Self::Binary { op, l, r } => write!(f, "({op} {l} {r})"),

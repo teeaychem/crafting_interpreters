@@ -1,12 +1,18 @@
-use std::io::Write;
+use std::{collections::HashMap, io::Write};
 
 use crate::{
-    ast::statement::{self, Statement, Statements},
-    parser::{evaluate::Evaluate, value::ValueError},
+    ast::{
+        expression::Expression,
+        statement::{self, Statement, Statements},
+    },
+    parser::value::{self, ValueError},
 };
+
+pub mod evaluate;
 
 pub struct Interpreter<'i> {
     d: Box<dyn Write + 'i>,
+    e: HashMap<String, Expression>,
 }
 
 impl<'i> Interpreter<'i> {
@@ -19,14 +25,25 @@ impl Interpreter<'_> {
     pub fn new() -> Self {
         Interpreter {
             d: Box::new(std::io::stdout()),
+            e: HashMap::default(),
         }
     }
 
     pub fn interpret(&mut self, statement: &Statement) -> Result<(), ValueError> {
+        println!("Interpreting: {statement:?}");
         match statement {
             Statement::Print { e } => {
-                let evaluation = e.evaluate()?;
+                let evaluation = self.evaluate(e)?;
+
                 self.d.write(format!("{evaluation}\n").as_bytes());
+            }
+
+            Statement::Declaration { name, assignment } => {
+                if let Some(value) = self.e.get_mut(name) {
+                    *value = assignment.clone();
+                } else {
+                    self.e.insert(name.to_owned(), assignment.clone());
+                };
             }
 
             _ => todo!("{statement:?}"),
@@ -58,7 +75,16 @@ mod tests {
 
         scanner.scan(input);
         parser.consume_scanner(scanner);
-        parser.parse();
+        match parser.parse() {
+            Ok(_) => {}
+
+            Err(e) => {
+                println!("Parser failure: {e:?}");
+                dbg!(&parser);
+                panic!();
+            }
+        };
+        
 
         let mut buffer = Vec::with_capacity(output.len());
         let mut stream = BufWriter::new(&mut buffer);
@@ -92,6 +118,13 @@ mod tests {
 
         let input = "print \"print\";";
         let output = "print";
+        test_io(input, output);
+    }
+
+    #[test]
+    fn declaration() {
+        let input = "var test = \"test\"; print test;";
+        let output = "test";
         test_io(input, output);
     }
 }
