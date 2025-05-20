@@ -5,6 +5,7 @@ use std::io::BufRead;
 use scanner::Scanner;
 
 mod ast;
+mod location;
 mod parser;
 mod scanner;
 
@@ -27,21 +28,3 @@ fn main() {
     println!("Exit");
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
-struct Location {
-    col: usize,
-    line: usize,
-}
-
-impl Default for Location {
-    fn default() -> Self {
-        Location { col: 0, line: 0 }
-    }
-}
-
-impl Location {
-    pub fn newline(&mut self) {
-        self.line += 1;
-        self.col = 0;
-    }
-}

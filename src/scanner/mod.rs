@@ -1,8 +1,8 @@
 use std::{iter::Peekable, str::Chars};
 
 use crate::{
+    location::Location,
     scanner::token::{Token, TokenError, TokenInstance, Tokens},
-    Location,
 };
 
 pub mod token;
@@ -25,13 +25,14 @@ impl Scanner {
     fn take_whitespace(&mut self, chars: &mut Peekable<Chars<'_>>) {
         'whitespace_loop: loop {
             if let Some(c) = chars.peek() {
-                if *c == '\n' {
-                    self.location.newline();
-                } else if c.is_whitespace() {
-                    self.location.col += 1;
-                } else {
-                    break 'whitespace_loop;
+                match c {
+                    '\n' => self.location.newline(),
+
+                    w if w.is_whitespace() => self.location.advance_col(1),
+
+                    _ => break 'whitespace_loop,
                 }
+
                 chars.next();
             } else {
                 break 'whitespace_loop;
@@ -192,7 +193,7 @@ impl Scanner {
             instance,
             location: self.location,
         });
-        self.location.col += advance;
+        self.location.advance_col(advance);
     }
 
     pub fn take_token(&mut self, chars: &mut Peekable<Chars<'_>>) -> Result<bool, TokenError> {
@@ -298,15 +299,15 @@ mod tests {
             vec![
                 Token {
                     instance: TokenInstance::Number { literal: 1.0 },
-                    location: Location { col: 0, line: 0 }
+                    location: Location::default()
                 },
                 Token {
                     instance: TokenInstance::Number { literal: 0.23 },
-                    location: Location { col: 2, line: 0 }
+                    location: Location::new(0, 2)
                 },
                 Token {
                     instance: TokenInstance::Number { literal: 1.23 },
-                    location: Location { col: 2, line: 1 }
+                    location: Location::new(1, 2)
                 }
             ]
         );
@@ -326,33 +327,33 @@ mod tests {
                     instance: Identifier {
                         literal: "not".to_string()
                     },
-                    location: Location { col: 0, line: 0 }
+                    location: Location::default()
                 },
                 Token {
                     instance: ParenLeft,
-                    location: Location { col: 4, line: 0 }
+                    location: Location::new(0, 4)
                 },
                 Token {
                     instance: True,
-                    location: Location { col: 5, line: 0 }
+                    location: Location::new(0, 5)
                 },
                 Token {
                     instance: And,
-                    location: Location { col: 10, line: 0 }
+                    location: Location::new(0, 10)
                 },
                 Token {
                     instance: Identifier {
                         literal: "perhaps".to_string()
                     },
-                    location: Location { col: 14, line: 0 }
+                    location: Location::new(0, 14)
                 },
                 Token {
                     instance: False,
-                    location: Location { col: 22, line: 0 }
+                    location: Location::new(0, 22)
                 },
                 Token {
                     instance: ParenRight,
-                    location: Location { col: 27, line: 0 }
+                    location: Location::new(0, 27)
                 }
             ]
         );

@@ -1,4 +1,4 @@
-use crate::Location;
+use crate::location::Location;
 
 pub type Tokens = Vec<Token>;
 
