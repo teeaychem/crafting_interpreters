@@ -4,17 +4,19 @@ use super::literal::{self, Literal};
 
 #[derive(Debug, Clone)]
 pub enum Expression {
+    Empty,
+
     Literal {
         l: Literal,
     },
 
     Identifier {
-        l: Literal,
+        id: Literal,
     },
 
     Assignment {
         id: Box<Expression>,
-        assignment: Box<Expression>,
+        e: Box<Expression>,
     },
 
     Unary {
@@ -37,7 +39,7 @@ impl Expression {
     pub fn assignment(id: Expression, to: Expression) -> Self {
         Expression::Assignment {
             id: Box::new(id),
-            assignment: Box::new(to),
+            e: Box::new(to),
         }
     }
 
@@ -58,7 +60,7 @@ impl Expression {
     }
 
     pub fn identifier(id: Literal) -> Self {
-        Expression::Identifier { l: id }
+        Expression::Identifier { id }
     }
 }
 
@@ -118,11 +120,12 @@ impl Display for OpB {
 impl Display for Expression {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            Self::Empty => write!(f, "<Empty>"),
             Self::Literal { l } => write!(f, "{l}"),
-            Self::Identifier { l } => write!(f, "{l}"),
+            Self::Identifier { id: l } => write!(f, "{l}"),
             Expression::Assignment {
                 id: name,
-                assignment,
+                e: assignment,
             } => write!(f, "{name} = {assignment}"),
             Self::Grouping { e } => write!(f, "(group {e})"),
             Self::Unary { op, e } => write!(f, "({op} {e})"),

@@ -7,7 +7,6 @@ use crate::{
     },
 };
 
-
 mod parse;
 pub mod value;
 
@@ -18,7 +17,7 @@ pub enum ParseError {
     MissingToken,
     OpenStatement,
     InvalidAsignee,
-    ExpectedAssignment
+    ExpectedAssignment,
 }
 
 #[derive(Debug)]
@@ -60,7 +59,7 @@ impl Parser {
     pub fn add_statement(&mut self, statement: Statement) {
         println!("Adding: {statement:?}");
         self.statements.push(statement);
-}
+    }
 }
 
 #[cfg(test)]

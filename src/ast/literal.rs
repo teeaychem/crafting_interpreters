@@ -66,7 +66,7 @@ impl Display for Literal {
 impl From<Literal> for Value {
     fn from(value: Literal) -> Self {
         match value {
-            Literal::Nil => Value::Null,
+            Literal::Nil => Value::Nil,
 
             Literal::False => Value::from(false),
 

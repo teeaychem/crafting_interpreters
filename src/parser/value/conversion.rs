@@ -3,7 +3,7 @@ use super::{Value, ValueError};
 impl Value {
     pub fn to_boolean(self) -> Result<Self, ValueError> {
         match self {
-            Value::Null => Ok(Value::from(false)),
+            Value::Nil => Ok(Value::from(false)),
 
             Value::Boolean { .. } => Ok(self),
 
@@ -13,7 +13,7 @@ impl Value {
 
     pub fn to_numeric(self) -> Result<Self, ValueError> {
         match self {
-            Value::Null => Err(ValueError::InvalidConversion),
+            Value::Nil => Err(ValueError::InvalidConversion),
 
             Value::Boolean { b } => Err(ValueError::InvalidConversion),
 
@@ -29,7 +29,7 @@ impl Value {
 
     pub fn to_string(self) -> Result<Self, ValueError> {
         let value = match self {
-            Value::Null => return Err(ValueError::InvalidConversion),
+            Value::Nil => return Err(ValueError::InvalidConversion),
 
             Value::Boolean { b } => match b {
                 true => Value::from("true"),
@@ -66,7 +66,7 @@ mod test {
             assert_eq!(true_coversion.to_boolean(), Ok(Value::from(true)));
         }
 
-        let false_conversions = [Value::from(false), Value::Null];
+        let false_conversions = [Value::from(false), Value::Nil];
 
         for false_coversion in false_conversions {
             assert_eq!(false_coversion.to_boolean(), Ok(Value::from(false)));
