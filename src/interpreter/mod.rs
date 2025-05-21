@@ -42,9 +42,10 @@ impl Interpreter<'_> {
                 self.out.write(format!("{evaluation}\n").as_bytes());
             }
 
-            Statement::Declaration { id, assignment } => {
+            Statement::Declaration { id, e } => {
                 let id = self.get_identifier(id)?;
-                let assignment = self.evaluate(assignment)?;
+
+                let assignment = self.evaluate(e)?;
 
                 self.env.insert(id, assignment);
             }
@@ -150,5 +151,13 @@ var a = 3;
 var b = 3;
 print (a * b) / (a + b);";
         test_io(input, "1.5");
+    }
+
+    #[test]
+    fn var_nil() {
+        let input = "
+var a;
+print a;";
+        test_io(input, "nil");
     }
 }

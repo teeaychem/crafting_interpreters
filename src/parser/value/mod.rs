@@ -7,7 +7,7 @@ pub enum Value {
     Numeric { n: f64 },
     String { s: String },
     Boolean { b: bool },
-    Null,
+    Nil,
 }
 
 #[derive(Debug, PartialEq)]
@@ -39,8 +39,8 @@ impl std::cmp::PartialOrd for Value {
         use Value::*;
 
         match (self, other) {
-            (Null, _) => None,
-            (_, Null) => None,
+            (Nil, _) => None,
+            (_, Nil) => None,
 
             (Boolean { .. }, Boolean { .. }) => Some(Equal),
             (Boolean { .. }, _) => Some(Greater),
@@ -84,7 +84,7 @@ impl From<bool> for Value {
 impl std::fmt::Display for Value {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Value::Null => write!(f, "nil"),
+            Value::Nil => write!(f, "nil"),
 
             Value::Boolean { b } => write!(f, "{b}"),
 

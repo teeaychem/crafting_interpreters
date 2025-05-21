@@ -51,13 +51,12 @@ impl Parser {
     fn statement(&mut self) -> Result<(), ParseError> {
         while let Some(token) = self.token() {
             use TokenKind::*;
-            dbg!(&token);
 
             match token.kind {
                 Print => {
                     self.consume_unchecked();
                     let expr = self.expression()?;
-                    self.add_statement(Statement::Print { e: expr });
+                    self.add_statement(Statement::print(expr));
                     self.close_statement()?;
                 }
 
@@ -65,14 +64,15 @@ impl Parser {
                     self.consume_unchecked();
 
                     match self.expression()? {
-                        Expression::Assignment {
-                            id: name,
-                            assignment,
-                        } => {
-                            self.add_statement(Statement::Declaration {
-                                id: *name,
-                                assignment: *assignment,
-                            });
+                        Expression::Assignment { id, e: assignment } => {
+                            self.add_statement(Statement::declaration(*id, Some(*assignment)));
+                        }
+
+                        Expression::Identifier { id } => {
+                            self.add_statement(Statement::declaration(
+                                Expression::identifier(id),
+                                None,
+                            ));
                         }
 
                         _ => return Err(ParseError::ExpectedAssignment),
