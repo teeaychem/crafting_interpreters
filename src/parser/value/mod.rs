@@ -14,6 +14,9 @@ pub enum Value {
 pub enum ValueError {
     ConflictingSubexpression,
     InvalidConversion,
+    InvalidAsignTo,
+    InvalidIdentifier,
+    Redeclaration,
 }
 
 impl std::cmp::PartialEq for Value {

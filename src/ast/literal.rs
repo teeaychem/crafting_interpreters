@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::{fmt::Display, panic};
 
 use crate::{ast::expression::Expression, parser::value::Value};
 
@@ -6,6 +6,7 @@ use crate::{ast::expression::Expression, parser::value::Value};
 pub enum Literal {
     Number { n: f64 },
     String { s: String },
+    Identifier { i: String },
     True,
     False,
     Nil,
@@ -54,6 +55,7 @@ impl Display for Literal {
         match self {
             Self::Number { n } => write!(f, "{n}"),
             Self::String { s } => write!(f, "{s}"),
+            Self::Identifier { i } => write!(f, "{i}"),
             Literal::True => write!(f, "true"),
             Literal::False => write!(f, "false"),
             Literal::Nil => write!(f, "nil"),
@@ -73,6 +75,10 @@ impl From<Literal> for Value {
             Literal::Number { n } => Value::from(n),
 
             Literal::String { s } => Value::from(s.to_owned()),
+
+            Literal::Identifier { i } => {
+                panic!("Cannot convert identifier using from")
+            }
         }
     }
 }

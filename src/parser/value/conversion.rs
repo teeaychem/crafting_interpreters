@@ -7,7 +7,7 @@ impl Value {
 
             Value::Boolean { .. } => Ok(self),
 
-            _ => Ok(Value::from(true))
+            _ => Ok(Value::from(true)),
         }
     }
 
@@ -66,10 +66,7 @@ mod test {
             assert_eq!(true_coversion.to_boolean(), Ok(Value::from(true)));
         }
 
-        let false_conversions = [
-            Value::from(false),
-            Value::Null,
-        ];
+        let false_conversions = [Value::from(false), Value::Null];
 
         for false_coversion in false_conversions {
             assert_eq!(false_coversion.to_boolean(), Ok(Value::from(false)));

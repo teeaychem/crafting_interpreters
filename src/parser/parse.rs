@@ -1,4 +1,4 @@
-use crate::ast::expression::{BinaryOp, Expression, UnaryOp};
+use crate::ast::expression::{Expression, OpB, OpU};
 use crate::ast::literal::Literal;
 use crate::scanner::token::{self, Token};
 use crate::{ast::statement::Statement, scanner::token::TokenInstance};
@@ -19,6 +19,7 @@ impl Parser {
             self.index += 1;
             Ok(())
         } else {
+            println!("Failed to consume {instance:?}");
             Err(ParseError::MissingToken)
         }
     }
@@ -41,7 +42,7 @@ impl Parser {
     }
 
     fn statement(&mut self) -> Result<(), ParseError> {
-        while let Some(token) = self.token() {            
+        while let Some(token) = self.token() {
             use TokenInstance::*;
             dbg!(&token);
 
@@ -49,35 +50,35 @@ impl Parser {
                 Print => {
                     self.consume();
                     let expr = self.expression()?;
-                    self.statements.push(Statement::Print { e: expr });
+                    self.add_statement(Statement::Print { e: expr });
                     self.close_statement()?;
                 }
 
                 Var => {
                     self.consume();
 
-                    let name_expression = self.expression()?;
-                    let name = match name_expression {
-                        Expression::Identifier {
-                            l: Literal::String { s },
-                        } => s,
-                        
-                        _ => {
-                            return Err(ParseError::InvalidAsignee);
+                    match self.expression()? {
+                        Expression::Assignment { name, assignment } => {
+                            self.add_statement(Statement::Declaration {
+                                id: *name,
+                                assignment: *assignment,
+                            });
                         }
+
+                        _ => return Err(ParseError::ExpectedAssignment),
                     };
-
-                    self.consume_specific(TokenInstance::Equal)?;
-                    let assignment = self.expression()?;
-
-                    self.statements
-                        .push(Statement::Declaration { name, assignment });
-
 
                     self.close_statement()?;
                 }
 
-                _ => todo!("{:?}", token.instance),
+                _ => match self.expression() {
+                    Err(_) => todo!("Statment todo"),
+
+                    Ok(e) => {
+                        self.add_statement(Statement::Expression { e });
+                        self.close_statement()?;
+                    }
+                },
             }
         }
 
@@ -85,7 +86,28 @@ impl Parser {
     }
 
     pub fn expression(&mut self) -> Result<Expression, ParseError> {
-        self.equality()
+        self.assignment()
+    }
+
+    fn assignment(&mut self) -> Result<Expression, ParseError> {
+        let mut expr = self.equality()?;
+
+        if let Some(token) = self.token() {
+            match &token.instance {
+                TokenInstance::Equal => {
+                    self.consume();
+                    let assignment = self.assignment()?;
+                    expr = Expression::Assignment {
+                        name: Box::new(expr),
+                        assignment: Box::new(assignment),
+                    };
+                }
+
+                _ => {}
+            }
+        }
+
+        Ok(expr)
     }
 
     fn equality(&mut self) -> Result<Expression, ParseError> {
@@ -97,7 +119,7 @@ impl Parser {
                     self.consume();
                     let right = self.comparison()?;
                     expr = Expression::Binary {
-                        op: BinaryOp::Eq,
+                        op: OpB::Eq,
                         l: Box::new(expr),
                         r: Box::new(right),
                     }
@@ -107,7 +129,7 @@ impl Parser {
                     self.consume();
                     let right = self.comparison()?;
                     expr = Expression::Binary {
-                        op: BinaryOp::Neq,
+                        op: OpB::Neq,
                         l: Box::new(expr),
                         r: Box::new(right),
                     };
@@ -128,7 +150,7 @@ impl Parser {
                 TokenInstance::Greater => {
                     self.consume();
                     expr = Expression::Binary {
-                        op: BinaryOp::Gt,
+                        op: OpB::Gt,
                         l: Box::new(expr),
                         r: Box::new(self.comparison()?),
                     };
@@ -137,7 +159,7 @@ impl Parser {
                 TokenInstance::GreaterEqual => {
                     self.consume();
                     expr = Expression::Binary {
-                        op: BinaryOp::Geq,
+                        op: OpB::Geq,
                         l: Box::new(expr),
                         r: Box::new(self.comparison()?),
                     }
@@ -146,7 +168,7 @@ impl Parser {
                 TokenInstance::Less => {
                     self.consume();
                     expr = Expression::Binary {
-                        op: BinaryOp::Lt,
+                        op: OpB::Lt,
                         l: Box::new(expr),
                         r: Box::new(self.comparison()?),
                     }
@@ -155,7 +177,7 @@ impl Parser {
                 TokenInstance::LessEqual => {
                     self.consume();
                     expr = Expression::Binary {
-                        op: BinaryOp::Leq,
+                        op: OpB::Leq,
                         l: Box::new(expr),
                         r: Box::new(self.comparison()?),
                     }
@@ -176,7 +198,7 @@ impl Parser {
                 TokenInstance::Minus => {
                     self.consume();
                     expr = Expression::Binary {
-                        op: BinaryOp::Minus,
+                        op: OpB::Minus,
                         l: Box::new(expr),
                         r: Box::new(self.term()?),
                     };
@@ -185,7 +207,7 @@ impl Parser {
                 TokenInstance::Plus => {
                     self.consume();
                     expr = Expression::Binary {
-                        op: BinaryOp::Plus,
+                        op: OpB::Plus,
                         l: Box::new(expr),
                         r: Box::new(self.term()?),
                     };
@@ -206,7 +228,7 @@ impl Parser {
                     self.consume();
                     let right = self.factor()?;
                     expr = Expression::Binary {
-                        op: BinaryOp::Slash,
+                        op: OpB::Slash,
                         l: Box::new(expr),
                         r: Box::new(right),
                     };
@@ -216,7 +238,7 @@ impl Parser {
                     self.consume();
                     let right = self.factor()?;
                     expr = Expression::Binary {
-                        op: BinaryOp::Star,
+                        op: OpB::Star,
                         l: Box::new(expr),
                         r: Box::new(right),
                     };
@@ -238,14 +260,14 @@ impl Parser {
                     TokenInstance::Bang => {
                         self.consume();
                         Expression::Unary {
-                            op: UnaryOp::Bang,
+                            op: OpU::Bang,
                             e: Box::new(self.unary()?),
                         }
                     }
                     TokenInstance::Minus => {
                         self.consume();
                         Expression::Unary {
-                            op: UnaryOp::Minus,
+                            op: OpU::Minus,
                             e: Box::new(self.unary()?),
                         }
                     }

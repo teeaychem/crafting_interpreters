@@ -17,7 +17,8 @@ pub enum ParseError {
     UnexpectedToken,
     MissingToken,
     OpenStatement,
-    InvalidAsignee
+    InvalidAsignee,
+    ExpectedAssignment
 }
 
 #[derive(Debug)]
@@ -55,6 +56,11 @@ impl Parser {
     pub fn statements(&self) -> &Statements {
         &self.statements
     }
+
+    pub fn add_statement(&mut self, statement: Statement) {
+        println!("Adding: {statement:?}");
+        self.statements.push(statement);
+}
 }
 
 #[cfg(test)]

@@ -2,12 +2,15 @@ use core::panic;
 
 use super::{Expression, Interpreter};
 use crate::{
-    ast::{expression::{BinaryOp, UnaryOp}, literal::Literal},
+    ast::{
+        expression::{OpB, OpU},
+        literal::{self, Literal},
+    },
     parser::value::{Value, ValueError},
 };
 
 impl Interpreter<'_> {
-    pub fn evaluate_boolean(&self, expr: &Expression) -> Result<bool, ValueError> {
+    pub fn evaluate_boolean(&mut self, expr: &Expression) -> Result<bool, ValueError> {
         match self.evaluate(expr)?.to_boolean() {
             Ok(Value::Boolean { b }) => Ok(b),
 
@@ -15,7 +18,7 @@ impl Interpreter<'_> {
         }
     }
 
-    pub fn evaluate_numeric(&self, expr: &Expression) -> Result<f64, ValueError> {
+    pub fn evaluate_numeric(&mut self, expr: &Expression) -> Result<f64, ValueError> {
         match self.evaluate(expr)?.to_numeric() {
             Ok(Value::Numeric { n }) => Ok(n),
 
@@ -23,7 +26,7 @@ impl Interpreter<'_> {
         }
     }
 
-    pub fn evaluate_string(&self, expr: &Expression) -> Result<String, ValueError> {
+    pub fn evaluate_string(&mut self, expr: &Expression) -> Result<String, ValueError> {
         match self.evaluate(expr)?.to_string() {
             Ok(Value::String { s }) => Ok(s.to_owned()),
 
@@ -31,29 +34,50 @@ impl Interpreter<'_> {
         }
     }
 
-    pub fn evaluate(&self, expr: &Expression) -> Result<Value, ValueError> {
+    pub fn get_identifier(&mut self, expr: &Expression) -> Result<String, ValueError> {
+        match expr {
+            Expression::Identifier {
+                l: Literal::String { s },
+            } => Ok(s.to_owned()),
+
+            _ => {
+                return Err(ValueError::InvalidAsignTo);
+            }
+        }
+    }
+
+    pub fn evaluate(&mut self, expr: &Expression) -> Result<Value, ValueError> {
         let value = match expr {
             Expression::Literal { l } => Value::from(l.to_owned()),
 
-            Expression::Identifier { l } => {
-                match l {
-                    Literal::String { s } => {
-                        match self.e.get(s) {
-                            Some(e) => self.evaluate(e)?,
-                        
+            Expression::Identifier { l } => match l {
+                Literal::String { s } => match self.e.get(s) {
+                    None => return Err(ValueError::InvalidIdentifier),
 
-                            None => panic!("uf")
-                        }
-                    },
+                    Some(e) => return Ok(e.to_owned()),
+                },
 
-                    _ => todo!("Eval declaration")
-                }
+                _ => todo!("Eval declaration"),
             },
+
+            Expression::Assignment { name, assignment } => {
+                let assignment = self.evaluate(assignment)?;
+
+                let name = self.get_identifier(name)?;
+
+                if let Some(value) = self.e.get_mut(&name) {
+                    *value = assignment.clone();
+                } else {
+                    self.e.insert(name, assignment.clone());
+                }
+
+                assignment
+            }
 
             Expression::Grouping { e } => self.evaluate(e)?,
 
             Expression::Unary { op, e } => {
-                use UnaryOp::*;
+                use OpU::*;
                 match op {
                     Minus => Value::from(-self.evaluate_numeric(e)?),
 
@@ -62,7 +86,7 @@ impl Interpreter<'_> {
             }
 
             Expression::Binary { op, l, r } => {
-                use BinaryOp::*;
+                use OpB::*;
                 match op {
                     Minus => Value::from(self.evaluate_numeric(l)? - self.evaluate_numeric(r)?),
 
@@ -108,10 +132,10 @@ mod test {
 
     #[test]
     fn basic_negation() {
-        let interpreter = Interpreter::new();
+        let mut interpreter = Interpreter::new();
         let number = Expression::from(64.0);
 
-        let number_negation = Expression::unary(UnaryOp::Minus, number);
+        let number_negation = Expression::unary(OpU::Minus, number);
 
         assert_eq!(
             interpreter.evaluate(&number_negation),
@@ -120,7 +144,7 @@ mod test {
 
         let string = Expression::from("64");
 
-        let string_negation = Expression::unary(UnaryOp::Minus, string);
+        let string_negation = Expression::unary(OpU::Minus, string);
 
         assert_eq!(
             interpreter.evaluate(&string_negation),
@@ -130,7 +154,7 @@ mod test {
 
     #[test]
     fn basic_arithmetic() {
-        let interpreter = Interpreter::new();
+        let mut interpreter = Interpreter::new();
 
         let a_value = 64.0;
         let b_value = 32.0;
@@ -138,7 +162,7 @@ mod test {
         let a = Expression::from(a_value);
         let b = Expression::from(b_value);
 
-        let addition = Expression::binary(BinaryOp::Star, a, b);
+        let addition = Expression::binary(OpB::Star, a, b);
 
         assert_eq!(
             interpreter.evaluate(&addition),
@@ -148,30 +172,30 @@ mod test {
 
     #[test]
     fn basic_string() {
-        let interpreter = Interpreter::new();
+        let mut interpreter = Interpreter::new();
 
         let a = Expression::from("a ");
         let b = Expression::from("string");
 
-        let addition = Expression::binary(BinaryOp::Plus, a, b);
+        let addition = Expression::binary(OpB::Plus, a, b);
 
         assert_eq!(interpreter.evaluate(&addition), Ok(Value::from("a string")));
     }
 
     #[test]
     fn basic_comparison() {
-        let interpreter = Interpreter::new();
+        let mut interpreter = Interpreter::new();
 
         let a_value = 64.0;
         let b_value = 32.0;
 
         let gt = Expression::binary(
-            BinaryOp::Gt,
+            OpB::Gt,
             Expression::from(a_value),
             Expression::from(b_value),
         );
         let leq = Expression::binary(
-            BinaryOp::Leq,
+            OpB::Leq,
             Expression::from(a_value),
             Expression::from(b_value),
         );
@@ -182,39 +206,38 @@ mod test {
 
     #[test]
     fn basic_equality() {
-        let interpreter = Interpreter::new();
+        let mut interpreter = Interpreter::new();
 
-        
         let a_value = 64.0;
         let b_value = 32.0;
 
         let eq_self = Expression::binary(
-            BinaryOp::Eq,
+            OpB::Eq,
             Expression::from(a_value),
             Expression::from(a_value),
         );
 
         let eq_same = Expression::binary(
-            BinaryOp::Eq,
+            OpB::Eq,
             Expression::from(Expression::from("a")),
             Expression::from(Expression::from("a")),
         );
 
         let neq = Expression::binary(
-            BinaryOp::Eq,
+            OpB::Eq,
             Expression::from(a_value),
             Expression::from(b_value),
         );
 
-        let neq_different_types = Expression::binary(
-            BinaryOp::Eq,
-            Expression::from("64.0"),
-            Expression::from(64.0),
-        );
+        let neq_different_types =
+            Expression::binary(OpB::Eq, Expression::from("64.0"), Expression::from(64.0));
 
         assert_eq!(interpreter.evaluate(&eq_self), Ok(Value::from(true)));
         assert_eq!(interpreter.evaluate(&eq_same), Ok(Value::from(true)));
         assert_eq!(interpreter.evaluate(&neq), Ok(Value::from(false)));
-        assert_eq!(interpreter.evaluate(&neq_different_types), Ok(Value::from(false)));
+        assert_eq!(
+            interpreter.evaluate(&neq_different_types),
+            Ok(Value::from(false))
+        );
     }
 }
