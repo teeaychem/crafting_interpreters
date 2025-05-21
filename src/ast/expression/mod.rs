@@ -2,8 +2,6 @@ use std::fmt::Display;
 
 use super::literal::Literal;
 
-
-
 #[derive(Debug, Clone)]
 pub enum Expression {
     Literal {
@@ -14,13 +12,18 @@ pub enum Expression {
         l: Literal,
     },
 
+    Assignment {
+        name: Box<Expression>,
+        assignment: Box<Expression>,
+    },
+
     Unary {
-        op: UnaryOp,
+        op: OpU,
         e: Box<Expression>,
     },
 
     Binary {
-        op: BinaryOp,
+        op: OpB,
         l: Box<Expression>,
         r: Box<Expression>,
     },
@@ -30,6 +33,20 @@ pub enum Expression {
     },
 }
 
+impl Expression {
+    pub fn binary(op: OpB, a: Expression, b: Expression) -> Self {
+        Expression::Binary {
+            op,
+            l: Box::new(a),
+            r: Box::new(b),
+        }
+    }
+
+    pub fn unary(op: OpU, a: Expression) -> Self {
+        Expression::Unary { op, e: Box::new(a) }
+    }
+}
+
 impl From<Literal> for Expression {
     fn from(value: Literal) -> Self {
         Expression::Literal { l: value }
@@ -37,12 +54,12 @@ impl From<Literal> for Expression {
 }
 
 #[derive(Debug, Clone, Copy)]
-pub enum UnaryOp {
+pub enum OpU {
     Minus,
     Bang,
 }
 
-impl Display for UnaryOp {
+impl Display for OpU {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Bang => write!(f, "!"),
@@ -53,7 +70,7 @@ impl Display for UnaryOp {
 }
 
 #[derive(Debug, Clone, Copy)]
-pub enum BinaryOp {
+pub enum OpB {
     Eq,
     Neq,
     Lt,
@@ -66,7 +83,7 @@ pub enum BinaryOp {
     Slash,
 }
 
-impl Display for BinaryOp {
+impl Display for OpB {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Eq => write!(f, "=="),
@@ -88,6 +105,7 @@ impl Display for Expression {
         match self {
             Self::Literal { l } => write!(f, "{l}"),
             Self::Identifier { l } => write!(f, "{l}"),
+            Expression::Assignment { name, assignment } => write!(f, "{name} = {assignment}"),
             Self::Grouping { e } => write!(f, "(group {e})"),
             Self::Unary { op, e } => write!(f, "({op} {e})"),
             Self::Binary { op, l, r } => write!(f, "({op} {l} {r})"),
@@ -102,9 +120,9 @@ mod test {
     #[test]
     fn simple_display() {
         let ast = Expression::Binary {
-            op: BinaryOp::Star,
+            op: OpB::Star,
             l: Box::new(Expression::Unary {
-                op: UnaryOp::Minus,
+                op: OpU::Minus,
                 e: Box::new(Expression::Literal {
                     l: Literal::Number { n: 123_f64 },
                 }),
@@ -117,19 +135,5 @@ mod test {
         };
 
         assert_eq!(format!("{ast}"), "(* (- 123) (group 45.67))");
-    }
-}
-
-impl Expression {
-    pub fn binary(op: BinaryOp, a: Expression, b: Expression) -> Self {
-        Expression::Binary {
-            op,
-            l: Box::new(a),
-            r: Box::new(b),
-        }
-    }
-
-    pub fn unary(op: UnaryOp, a: Expression) -> Self {
-        Expression::Unary { op, e: Box::new(a) }
     }
 }

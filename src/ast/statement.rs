@@ -7,11 +7,18 @@ pub enum Statement {
     Expression {
         e: Expression,
     },
+
     Print {
         e: Expression,
     },
+
     Declaration {
-        name: String,
+        id: Expression,
         assignment: Expression,
     },
+
+    Assignment {
+        id: Expression,
+        assignment: Expression,
+    }
 }

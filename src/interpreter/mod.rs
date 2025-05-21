@@ -3,16 +3,17 @@ use std::{collections::HashMap, io::Write};
 use crate::{
     ast::{
         expression::Expression,
+        literal::Literal,
         statement::{self, Statement, Statements},
     },
-    parser::value::{self, ValueError},
+    parser::value::{self, Value, ValueError},
 };
 
 pub mod evaluate;
 
 pub struct Interpreter<'i> {
     d: Box<dyn Write + 'i>,
-    e: HashMap<String, Expression>,
+    e: HashMap<String, Value>,
 }
 
 impl<'i> Interpreter<'i> {
@@ -32,21 +33,29 @@ impl Interpreter<'_> {
     pub fn interpret(&mut self, statement: &Statement) -> Result<(), ValueError> {
         println!("Interpreting: {statement:?}");
         match statement {
+            Statement::Expression { e } => {
+                self.evaluate(e)?;
+            }
+
+            
             Statement::Print { e } => {
                 let evaluation = self.evaluate(e)?;
 
                 self.d.write(format!("{evaluation}\n").as_bytes());
             }
 
-            Statement::Declaration { name, assignment } => {
-                if let Some(value) = self.e.get_mut(name) {
-                    *value = assignment.clone();
-                } else {
-                    self.e.insert(name.to_owned(), assignment.clone());
-                };
-            }
+            Statement::Declaration { id: name, assignment } => {
+                let name = self.get_identifier(name)?;
 
-            _ => todo!("{statement:?}"),
+                if self.e.get(&name).is_some() {
+                    return Err(ValueError::Redeclaration);
+                } else {
+                    let assignment = self.evaluate(assignment)?;
+                    self.e.insert(name, assignment.clone());
+                }
+            }            
+
+            _ => todo!("Inpereter todo: {statement:?}"),
         }
 
         Ok(())
@@ -59,6 +68,8 @@ impl Interpreter<'_> {
 
         Ok(())
     }
+
+    
 }
 
 #[cfg(test)]
@@ -84,7 +95,6 @@ mod tests {
                 panic!();
             }
         };
-        
 
         let mut buffer = Vec::with_capacity(output.len());
         let mut stream = BufWriter::new(&mut buffer);
@@ -115,7 +125,10 @@ mod tests {
         let input = "print !true;";
         let output = "false";
         test_io(input, output);
+    }
 
+    #[test]
+    fn print_string() {
         let input = "print \"print\";";
         let output = "print";
         test_io(input, output);
@@ -123,8 +136,8 @@ mod tests {
 
     #[test]
     fn declaration() {
-        let input = "var test = \"test\"; print test;";
-        let output = "test";
+        let input = "var test = \"testing\"; test = \"testing again\"; print test;";
+        let output = "testing again";
         test_io(input, output);
     }
 }
