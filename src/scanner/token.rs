@@ -4,13 +4,13 @@ pub type Tokens = Vec<Token>;
 
 #[derive(Debug, PartialEq)]
 pub struct Token {
-    pub instance: TokenInstance,
+    pub kind: TokenKind,
     pub location: Location,
 }
 
 #[allow(non_camel_case_types)]
-#[derive(Debug, PartialEq)]
-pub enum TokenInstance {
+#[derive(Clone, Debug, PartialEq)]
+pub enum TokenKind {
     // Single character
     BraceLeft,
     BraceRight,
@@ -34,12 +34,12 @@ pub enum TokenInstance {
     Less,
     LessEqual,
 
-    // literals
-    Identifier { literal: String },
+    // Literals
+    Identifier { id: String },
     Number { literal: f64 },
     String { literal: String },
 
-    // keywords
+    // Keywords
     And,
     Class,
     Else,
@@ -57,26 +57,29 @@ pub enum TokenInstance {
     Var,
     While,
 
-    //
+    // Invisible
     EOF,
 }
 
 impl Token {
-    pub fn new(instance: TokenInstance, location: Location) -> Self {
-        Token { instance, location }
+    pub fn new(instance: TokenKind, location: Location) -> Self {
+        Token {
+            kind: instance,
+            location,
+        }
     }
 
-    pub fn is(&self, instance: TokenInstance) -> bool {
-        self.instance == instance
+    pub fn is(&self, instance: TokenKind) -> bool {
+        self.kind == instance
     }
 }
 
 impl std::fmt::Display for Token {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match &self.instance {
-            TokenInstance::Number { literal } => write!(f, "Number: {literal}"),
-            TokenInstance::String { literal } => write!(f, "String: {literal}",),
-            _ => write!(f, "Non-literal: {:?}", self.instance),
+        match &self.kind {
+            TokenKind::Number { literal } => write!(f, "Number: {literal}"),
+            TokenKind::String { literal } => write!(f, "String: {literal}",),
+            _ => write!(f, "Non-literal: {:?}", self.kind),
         }
     }
 }

@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use super::literal::Literal;
+use super::literal::{self, Literal};
 
 #[derive(Debug, Clone)]
 pub enum Expression {
@@ -13,7 +13,7 @@ pub enum Expression {
     },
 
     Assignment {
-        name: Box<Expression>,
+        id: Box<Expression>,
         assignment: Box<Expression>,
     },
 
@@ -34,6 +34,13 @@ pub enum Expression {
 }
 
 impl Expression {
+    pub fn assignment(id: Expression, to: Expression) -> Self {
+        Expression::Assignment {
+            id: Box::new(id),
+            assignment: Box::new(to),
+        }
+    }
+
     pub fn binary(op: OpB, a: Expression, b: Expression) -> Self {
         Expression::Binary {
             op,
@@ -44,6 +51,14 @@ impl Expression {
 
     pub fn unary(op: OpU, a: Expression) -> Self {
         Expression::Unary { op, e: Box::new(a) }
+    }
+
+    pub fn literal(literal: Literal) -> Self {
+        Expression::Literal { l: literal }
+    }
+
+    pub fn identifier(id: Literal) -> Self {
+        Expression::Identifier { l: id }
     }
 }
 
@@ -105,7 +120,10 @@ impl Display for Expression {
         match self {
             Self::Literal { l } => write!(f, "{l}"),
             Self::Identifier { l } => write!(f, "{l}"),
-            Expression::Assignment { name, assignment } => write!(f, "{name} = {assignment}"),
+            Expression::Assignment {
+                id: name,
+                assignment,
+            } => write!(f, "{name} = {assignment}"),
             Self::Grouping { e } => write!(f, "(group {e})"),
             Self::Unary { op, e } => write!(f, "({op} {e})"),
             Self::Binary { op, l, r } => write!(f, "({op} {l} {r})"),

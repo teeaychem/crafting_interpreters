@@ -16,7 +16,6 @@ pub enum ValueError {
     InvalidConversion,
     InvalidAsignTo,
     InvalidIdentifier,
-    Redeclaration,
 }
 
 impl std::cmp::PartialEq for Value {

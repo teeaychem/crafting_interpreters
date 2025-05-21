@@ -2,7 +2,7 @@ use crate::{
     ast::statement::{Statement, Statements},
     scanner::{
         self,
-        token::{self, Token, TokenInstance, Tokens},
+        token::{self, Token, TokenKind, Tokens},
         Scanner,
     },
 };

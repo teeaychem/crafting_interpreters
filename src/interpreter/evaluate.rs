@@ -51,7 +51,7 @@ impl Interpreter<'_> {
             Expression::Literal { l } => Value::from(l.to_owned()),
 
             Expression::Identifier { l } => match l {
-                Literal::String { s } => match self.e.get(s) {
+                Literal::String { s } => match self.env.get(s) {
                     None => return Err(ValueError::InvalidIdentifier),
 
                     Some(e) => return Ok(e.to_owned()),
@@ -60,16 +60,12 @@ impl Interpreter<'_> {
                 _ => todo!("Eval declaration"),
             },
 
-            Expression::Assignment { name, assignment } => {
+            Expression::Assignment { id: name, assignment } => {
                 let assignment = self.evaluate(assignment)?;
 
                 let name = self.get_identifier(name)?;
 
-                if let Some(value) = self.e.get_mut(&name) {
-                    *value = assignment.clone();
-                } else {
-                    self.e.insert(name, assignment.clone());
-                }
+                self.env.insert(name, assignment.clone());
 
                 assignment
             }
