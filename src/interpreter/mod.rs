@@ -12,48 +12,42 @@ use crate::{
 pub mod evaluate;
 
 pub struct Interpreter<'i> {
-    d: Box<dyn Write + 'i>,
-    e: HashMap<String, Value>,
+    out: Box<dyn Write + 'i>,
+    env: HashMap<String, Value>,
 }
 
 impl<'i> Interpreter<'i> {
     pub fn set_destination<T: Write + 'i>(&mut self, d: T) {
-        self.d = Box::new(d)
+        self.out = Box::new(d)
     }
 }
 
 impl Interpreter<'_> {
     pub fn new() -> Self {
         Interpreter {
-            d: Box::new(std::io::stdout()),
-            e: HashMap::default(),
+            out: Box::new(std::io::stdout()),
+            env: HashMap::default(),
         }
     }
 
     pub fn interpret(&mut self, statement: &Statement) -> Result<(), ValueError> {
-        println!("Interpreting: {statement:?}");
         match statement {
             Statement::Expression { e } => {
                 self.evaluate(e)?;
             }
 
-            
             Statement::Print { e } => {
                 let evaluation = self.evaluate(e)?;
 
-                self.d.write(format!("{evaluation}\n").as_bytes());
+                self.out.write(format!("{evaluation}\n").as_bytes());
             }
 
-            Statement::Declaration { id: name, assignment } => {
-                let name = self.get_identifier(name)?;
+            Statement::Declaration { id, assignment } => {
+                let id = self.get_identifier(id)?;
+                let assignment = self.evaluate(assignment)?;
 
-                if self.e.get(&name).is_some() {
-                    return Err(ValueError::Redeclaration);
-                } else {
-                    let assignment = self.evaluate(assignment)?;
-                    self.e.insert(name, assignment.clone());
-                }
-            }            
+                self.env.insert(id, assignment);
+            }
 
             _ => todo!("Inpereter todo: {statement:?}"),
         }
@@ -68,8 +62,6 @@ impl Interpreter<'_> {
 
         Ok(())
     }
-
-    
 }
 
 #[cfg(test)]
@@ -104,40 +96,59 @@ mod tests {
 
             interpreter.set_destination(&mut stream);
 
-            interpreter.interpret_all(parser.statements());
+            match interpreter.interpret_all(parser.statements()) {
+                Ok(_) => {}
+
+                Err(e) => panic!("Interpretation error: {e:?}"),
+            };
         }
 
         let buffer_string = std::str::from_utf8(&stream.buffer());
 
-        assert_eq!(output, buffer_string.expect("Failed to interpret").trim());
+        assert_eq!(buffer_string.expect("Failed to interpret").trim(), output);
     }
 
     #[test]
     fn print() {
-        let input = "print 5 + 5; print 5 - 5; ";
-        let output = "10\n0";
-        test_io(input, output);
+        test_io("print 5 + 5; print 5 - 5; ", "10\n0");
 
-        let input = "print true;";
-        let output = "true";
-        test_io(input, output);
+        test_io("print true;", "true");
 
-        let input = "print !true;";
-        let output = "false";
-        test_io(input, output);
+        test_io("print !true;", "false");
     }
 
     #[test]
     fn print_string() {
         let input = "print \"print\";";
-        let output = "print";
-        test_io(input, output);
+
+        test_io(input, "print");
     }
 
     #[test]
     fn declaration() {
         let input = "var test = \"testing\"; test = \"testing again\"; print test;";
-        let output = "testing again";
-        test_io(input, output);
+
+        test_io(input, "testing again");
+    }
+
+    #[test]
+    fn nested() {
+        let input = "
+var a = \"a\";
+var b = \"b\";
+a = b = \"c\";
+print a;
+";
+
+        test_io(input, "c");
+    }
+
+    #[test]
+    fn print_addition() {
+        let input = "
+var a = 3;
+var b = 3;
+print (a * b) / (a + b);";
+        test_io(input, "1.5");
     }
 }

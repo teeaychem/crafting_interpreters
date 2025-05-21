@@ -2,7 +2,7 @@ use std::{iter::Peekable, str::Chars};
 
 use crate::{
     location::Location,
-    scanner::token::{Token, TokenError, TokenInstance, Tokens},
+    scanner::token::{Token, TokenError, TokenKind, Tokens},
 };
 
 pub mod token;
@@ -50,7 +50,7 @@ impl Scanner {
                     let length = literal.len() + 2;
 
                     self.note_token(
-                        TokenInstance::String {
+                        TokenKind::String {
                             literal: std::mem::take(&mut literal),
                         },
                         length,
@@ -96,7 +96,7 @@ impl Scanner {
         }
 
         self.note_token(
-            TokenInstance::Number {
+            TokenKind::Number {
                 literal: number.parse().unwrap(),
             },
             number.len(),
@@ -117,40 +117,40 @@ impl Scanner {
         }
 
         let instance = match alphabetic.as_str() {
-            "and" => TokenInstance::And,
+            "and" => TokenKind::And,
 
-            "class" => TokenInstance::Class,
+            "class" => TokenKind::Class,
 
-            "else" => TokenInstance::Else,
+            "else" => TokenKind::Else,
 
-            "false" => TokenInstance::False,
+            "false" => TokenKind::False,
 
-            "for" => TokenInstance::For,
+            "for" => TokenKind::For,
 
-            "fun" => TokenInstance::Fun,
+            "fun" => TokenKind::Fun,
 
-            "if" => TokenInstance::If,
+            "if" => TokenKind::If,
 
-            "nil" => TokenInstance::Nil,
+            "nil" => TokenKind::Nil,
 
-            "or" => TokenInstance::Or,
+            "or" => TokenKind::Or,
 
-            "print" => TokenInstance::Print,
+            "print" => TokenKind::Print,
 
-            "return" => TokenInstance::Return,
+            "return" => TokenKind::Return,
 
-            "super" => TokenInstance::Super,
+            "super" => TokenKind::Super,
 
-            "this" => TokenInstance::This,
+            "this" => TokenKind::This,
 
-            "true" => TokenInstance::True,
+            "true" => TokenKind::True,
 
-            "var" => TokenInstance::Var,
+            "var" => TokenKind::Var,
 
-            "while" => TokenInstance::While,
+            "while" => TokenKind::While,
 
-            non_keyword => TokenInstance::Identifier {
-                literal: non_keyword.to_owned(),
+            non_keyword => TokenKind::Identifier {
+                id: non_keyword.to_owned(),
             },
         };
 
@@ -163,7 +163,7 @@ impl Scanner {
         &mut self,
         chars: &mut Peekable<Chars<'_>>,
         count: usize,
-        instance: TokenInstance,
+        instance: TokenKind,
     ) -> Result<(), TokenError> {
         self.note_token(instance, count);
         for _ in 0..count {
@@ -182,9 +182,9 @@ impl Scanner {
 
     fn scan_punctuation() {}
 
-    fn note_token(&mut self, instance: TokenInstance, advance: usize) {
+    fn note_token(&mut self, instance: TokenKind, advance: usize) {
         self.tokens.push(Token {
-            instance,
+            kind: instance,
             location: self.location,
         });
         self.location.advance_col(advance);
@@ -205,63 +205,63 @@ impl Scanner {
                         if let Some('/') = chars.peek() {
                             self.take_comment(chars);
                         } else {
-                            self.note_token(TokenInstance::Slash, 1);
+                            self.note_token(TokenKind::Slash, 1);
                         }
                     }
 
-                    '(' => self.take_characters(chars, 1, TokenInstance::ParenLeft)?,
+                    '(' => self.take_characters(chars, 1, TokenKind::ParenLeft)?,
 
-                    ')' => self.take_characters(chars, 1, TokenInstance::ParenRight)?,
+                    ')' => self.take_characters(chars, 1, TokenKind::ParenRight)?,
 
-                    '{' => self.take_characters(chars, 1, TokenInstance::BraceLeft)?,
+                    '{' => self.take_characters(chars, 1, TokenKind::BraceLeft)?,
 
-                    '}' => self.take_characters(chars, 1, TokenInstance::BraceRight)?,
+                    '}' => self.take_characters(chars, 1, TokenKind::BraceRight)?,
 
-                    ',' => self.take_characters(chars, 1, TokenInstance::Comma)?,
+                    ',' => self.take_characters(chars, 1, TokenKind::Comma)?,
 
-                    '.' => self.take_characters(chars, 1, TokenInstance::Dot)?,
+                    '.' => self.take_characters(chars, 1, TokenKind::Dot)?,
 
-                    '-' => self.take_characters(chars, 1, TokenInstance::Minus)?,
+                    '-' => self.take_characters(chars, 1, TokenKind::Minus)?,
 
-                    '+' => self.take_characters(chars, 1, TokenInstance::Plus)?,
+                    '+' => self.take_characters(chars, 1, TokenKind::Plus)?,
 
-                    ';' => self.take_characters(chars, 1, TokenInstance::Semicolon)?,
+                    ';' => self.take_characters(chars, 1, TokenKind::Semicolon)?,
 
-                    '*' => self.take_characters(chars, 1, TokenInstance::Star)?,
+                    '*' => self.take_characters(chars, 1, TokenKind::Star)?,
 
                     '!' => {
                         chars.next();
                         if let Some('=') = chars.peek() {
-                            self.take_characters(chars, 1, TokenInstance::BangEqual)?
+                            self.take_characters(chars, 1, TokenKind::BangEqual)?
                         } else {
-                            self.take_characters(chars, 0, TokenInstance::Bang)?
+                            self.take_characters(chars, 0, TokenKind::Bang)?
                         }
                     }
 
                     '=' => {
                         chars.next();
                         if let Some('=') = chars.peek() {
-                            self.take_characters(chars, 1, TokenInstance::EqualEqual)?
+                            self.take_characters(chars, 1, TokenKind::EqualEqual)?
                         } else {
-                            self.take_characters(chars, 0, TokenInstance::Equal)?
+                            self.take_characters(chars, 0, TokenKind::Equal)?
                         }
                     }
 
                     '<' => {
                         chars.next();
                         if let Some('=') = chars.peek() {
-                            self.take_characters(chars, 1, TokenInstance::LessEqual)?
+                            self.take_characters(chars, 1, TokenKind::LessEqual)?
                         } else {
-                            self.take_characters(chars, 0, TokenInstance::Less)?
+                            self.take_characters(chars, 0, TokenKind::Less)?
                         }
                     }
 
                     '>' => {
                         chars.next();
                         if let Some('=') = chars.peek() {
-                            self.take_characters(chars, 1, TokenInstance::GreaterEqual)?
+                            self.take_characters(chars, 1, TokenKind::GreaterEqual)?
                         } else {
-                            self.take_characters(chars, 0, TokenInstance::Greater)?
+                            self.take_characters(chars, 0, TokenKind::Greater)?
                         }
                     }
 
@@ -285,7 +285,7 @@ impl Scanner {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use TokenInstance::*;
+    use TokenKind::*;
 
     #[test]
     fn scanner_basic_numeric() {
@@ -296,15 +296,15 @@ mod tests {
             scanner.tokens,
             vec![
                 Token {
-                    instance: TokenInstance::Number { literal: 1.0 },
+                    kind: TokenKind::Number { literal: 1.0 },
                     location: Location::default()
                 },
                 Token {
-                    instance: TokenInstance::Number { literal: 0.23 },
+                    kind: TokenKind::Number { literal: 0.23 },
                     location: Location::new(0, 2)
                 },
                 Token {
-                    instance: TokenInstance::Number { literal: 1.23 },
+                    kind: TokenKind::Number { literal: 1.23 },
                     location: Location::new(1, 2)
                 }
             ]
@@ -322,35 +322,35 @@ mod tests {
             scanner.tokens,
             vec![
                 Token {
-                    instance: Identifier {
-                        literal: "not".to_string()
+                    kind: Identifier {
+                        id: "not".to_string()
                     },
                     location: Location::default()
                 },
                 Token {
-                    instance: ParenLeft,
+                    kind: ParenLeft,
                     location: Location::new(0, 4)
                 },
                 Token {
-                    instance: True,
+                    kind: True,
                     location: Location::new(0, 5)
                 },
                 Token {
-                    instance: And,
+                    kind: And,
                     location: Location::new(0, 10)
                 },
                 Token {
-                    instance: Identifier {
-                        literal: "perhaps".to_string()
+                    kind: Identifier {
+                        id: "perhaps".to_string()
                     },
                     location: Location::new(0, 14)
                 },
                 Token {
-                    instance: False,
+                    kind: False,
                     location: Location::new(0, 22)
                 },
                 Token {
-                    instance: ParenRight,
+                    kind: ParenRight,
                     location: Location::new(0, 27)
                 }
             ]

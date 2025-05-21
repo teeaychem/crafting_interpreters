@@ -1,7 +1,7 @@
 use crate::ast::expression::{Expression, OpB, OpU};
 use crate::ast::literal::Literal;
 use crate::scanner::token::{self, Token};
-use crate::{ast::statement::Statement, scanner::token::TokenInstance};
+use crate::{ast::statement::Statement, scanner::token::TokenKind};
 
 use super::{ParseError, Parser};
 
@@ -10,23 +10,30 @@ impl Parser {
         self.tokens.get(self.index)
     }
 
-    fn consume(&mut self) {
+    fn consume_unchecked(&mut self) {
         self.index += 1
     }
 
-    fn consume_specific(&mut self, instance: TokenInstance) -> Result<(), ParseError> {
-        if self.token().is_some_and(|t| t.instance == instance) {
-            self.index += 1;
-            Ok(())
-        } else {
-            println!("Failed to consume {instance:?}");
-            Err(ParseError::MissingToken)
+    fn check_token(&mut self, check: &TokenKind) -> Result<(), ParseError> {
+        match self.token() {
+            Some(t) if t.kind == *check => Ok(()),
+
+            _ => {
+                println!("Failed to find token {check:?}");
+                Err(ParseError::MissingToken)
+            }
         }
+    }
+
+    fn consume_checked(&mut self, check: &TokenKind) -> Result<(), ParseError> {
+        self.check_token(check)?;
+        self.index += 1;
+        Ok(())
     }
 
     fn close_statement(&mut self) -> Result<(), ParseError> {
         match self.token() {
-            Some(token) if token.instance == TokenInstance::Semicolon => {
+            Some(token) if token.kind == TokenKind::Semicolon => {
                 self.index += 1;
                 Ok(())
             }
@@ -43,22 +50,25 @@ impl Parser {
 
     fn statement(&mut self) -> Result<(), ParseError> {
         while let Some(token) = self.token() {
-            use TokenInstance::*;
+            use TokenKind::*;
             dbg!(&token);
 
-            match token.instance {
+            match token.kind {
                 Print => {
-                    self.consume();
+                    self.consume_unchecked();
                     let expr = self.expression()?;
                     self.add_statement(Statement::Print { e: expr });
                     self.close_statement()?;
                 }
 
                 Var => {
-                    self.consume();
+                    self.consume_unchecked();
 
                     match self.expression()? {
-                        Expression::Assignment { name, assignment } => {
+                        Expression::Assignment {
+                            id: name,
+                            assignment,
+                        } => {
                             self.add_statement(Statement::Declaration {
                                 id: *name,
                                 assignment: *assignment,
@@ -93,14 +103,11 @@ impl Parser {
         let mut expr = self.equality()?;
 
         if let Some(token) = self.token() {
-            match &token.instance {
-                TokenInstance::Equal => {
-                    self.consume();
+            match &token.kind {
+                TokenKind::Equal => {
+                    self.consume_unchecked();
                     let assignment = self.assignment()?;
-                    expr = Expression::Assignment {
-                        name: Box::new(expr),
-                        assignment: Box::new(assignment),
-                    };
+                    expr = Expression::assignment(expr, assignment)
                 }
 
                 _ => {}
@@ -114,25 +121,17 @@ impl Parser {
         let mut expr = self.comparison()?;
 
         while let Some(token) = self.token() {
-            match &token.instance {
-                TokenInstance::EqualEqual => {
-                    self.consume();
+            match &token.kind {
+                TokenKind::EqualEqual => {
+                    self.consume_unchecked();
                     let right = self.comparison()?;
-                    expr = Expression::Binary {
-                        op: OpB::Eq,
-                        l: Box::new(expr),
-                        r: Box::new(right),
-                    }
+                    expr = Expression::binary(OpB::Eq, expr, right)
                 }
 
-                TokenInstance::BangEqual => {
-                    self.consume();
+                TokenKind::BangEqual => {
+                    self.consume_unchecked();
                     let right = self.comparison()?;
-                    expr = Expression::Binary {
-                        op: OpB::Neq,
-                        l: Box::new(expr),
-                        r: Box::new(right),
-                    };
+                    expr = Expression::binary(OpB::Neq, expr, right);
                 }
 
                 _ => break,
@@ -146,41 +145,25 @@ impl Parser {
         let mut expr = self.term()?;
 
         while let Some(token) = self.token() {
-            match &token.instance {
-                TokenInstance::Greater => {
-                    self.consume();
-                    expr = Expression::Binary {
-                        op: OpB::Gt,
-                        l: Box::new(expr),
-                        r: Box::new(self.comparison()?),
-                    };
+            match &token.kind {
+                TokenKind::Greater => {
+                    self.consume_unchecked();
+                    expr = Expression::binary(OpB::Gt, expr, self.comparison()?)
                 }
 
-                TokenInstance::GreaterEqual => {
-                    self.consume();
-                    expr = Expression::Binary {
-                        op: OpB::Geq,
-                        l: Box::new(expr),
-                        r: Box::new(self.comparison()?),
-                    }
+                TokenKind::GreaterEqual => {
+                    self.consume_unchecked();
+                    expr = Expression::binary(OpB::Geq, expr, self.comparison()?)
                 }
 
-                TokenInstance::Less => {
-                    self.consume();
-                    expr = Expression::Binary {
-                        op: OpB::Lt,
-                        l: Box::new(expr),
-                        r: Box::new(self.comparison()?),
-                    }
+                TokenKind::Less => {
+                    self.consume_unchecked();
+                    expr = Expression::binary(OpB::Lt, expr, self.comparison()?)
                 }
 
-                TokenInstance::LessEqual => {
-                    self.consume();
-                    expr = Expression::Binary {
-                        op: OpB::Leq,
-                        l: Box::new(expr),
-                        r: Box::new(self.comparison()?),
-                    }
+                TokenKind::LessEqual => {
+                    self.consume_unchecked();
+                    expr = Expression::binary(OpB::Leq, expr, self.comparison()?)
                 }
 
                 _ => break,
@@ -194,23 +177,15 @@ impl Parser {
         let mut expr = self.factor()?;
 
         while let Some(token) = self.token() {
-            match &token.instance {
-                TokenInstance::Minus => {
-                    self.consume();
-                    expr = Expression::Binary {
-                        op: OpB::Minus,
-                        l: Box::new(expr),
-                        r: Box::new(self.term()?),
-                    };
+            match &token.kind {
+                TokenKind::Minus => {
+                    self.consume_unchecked();
+                    expr = Expression::binary(OpB::Minus, expr, self.term()?)
                 }
 
-                TokenInstance::Plus => {
-                    self.consume();
-                    expr = Expression::Binary {
-                        op: OpB::Plus,
-                        l: Box::new(expr),
-                        r: Box::new(self.term()?),
-                    };
+                TokenKind::Plus => {
+                    self.consume_unchecked();
+                    expr = Expression::binary(OpB::Plus, expr, self.term()?)
                 }
 
                 _ => break,
@@ -223,25 +198,15 @@ impl Parser {
         let mut expr = self.unary()?;
 
         while let Some(token) = self.token() {
-            match &token.instance {
-                TokenInstance::Slash => {
-                    self.consume();
-                    let right = self.factor()?;
-                    expr = Expression::Binary {
-                        op: OpB::Slash,
-                        l: Box::new(expr),
-                        r: Box::new(right),
-                    };
+            match &token.kind {
+                TokenKind::Slash => {
+                    self.consume_unchecked();
+                    expr = Expression::binary(OpB::Slash, expr, self.factor()?)
                 }
 
-                TokenInstance::Star => {
-                    self.consume();
-                    let right = self.factor()?;
-                    expr = Expression::Binary {
-                        op: OpB::Star,
-                        l: Box::new(expr),
-                        r: Box::new(right),
-                    };
+                TokenKind::Star => {
+                    self.consume_unchecked();
+                    expr = Expression::binary(OpB::Star, expr, self.factor()?)
                 }
 
                 _ => break,
@@ -256,20 +221,14 @@ impl Parser {
             None => return Err(ParseError::MissingToken),
 
             Some(token) => {
-                let expr = match &token.instance {
-                    TokenInstance::Bang => {
-                        self.consume();
-                        Expression::Unary {
-                            op: OpU::Bang,
-                            e: Box::new(self.unary()?),
-                        }
+                let expr = match &token.kind {
+                    TokenKind::Bang => {
+                        self.consume_unchecked();
+                        Expression::unary(OpU::Bang, self.unary()?)
                     }
-                    TokenInstance::Minus => {
-                        self.consume();
-                        Expression::Unary {
-                            op: OpU::Minus,
-                            e: Box::new(self.unary()?),
-                        }
+                    TokenKind::Minus => {
+                        self.consume_unchecked();
+                        Expression::unary(OpU::Minus, self.unary()?)
                     }
 
                     _ => self.primary()?,
@@ -281,36 +240,29 @@ impl Parser {
     }
 
     fn primary(&mut self) -> Result<Expression, ParseError> {
-        use crate::scanner::token::TokenInstance::*;
+        use crate::scanner::token::TokenKind::*;
         match self.token() {
             None => return Err(ParseError::MissingToken),
 
             Some(token) => {
-                let expr = match &token.instance {
-                    Number { literal } => Expression::Literal {
-                        l: Literal::from(*literal),
-                    },
+                let expr = match &token.kind {
+                    Number { literal } => Expression::literal(Literal::from(*literal)),
 
-                    String { literal } => Expression::Literal {
-                        l: Literal::from(literal.to_owned()),
-                    },
+                    String { literal } => Expression::literal(Literal::from(literal.to_owned())),
 
-                    True => Expression::Literal { l: Literal::True },
+                    True => Expression::literal(Literal::True),
 
-                    False => Expression::Literal { l: Literal::False },
+                    False => Expression::literal(Literal::False),
 
-                    Nil => Expression::Literal { l: Literal::Nil },
+                    Nil => Expression::literal(Literal::Nil),
 
-                    Identifier { literal } => Expression::Identifier {
-                        l: Literal::from(literal.to_owned()),
-                    },
+                    Identifier { id } => Expression::identifier(Literal::from(id.to_owned())),
 
                     ParenLeft => {
-                        self.consume();
+                        self.consume_unchecked();
                         let expr = self.expression()?;
-                        if self.token().is_none_or(|token| !token.is(ParenRight)) {
-                            return Err(ParseError::MismatchedParentheses);
-                        }
+                        self.check_token(&ParenRight);
+
                         expr
                     }
 
@@ -319,7 +271,7 @@ impl Parser {
                     }
                 };
 
-                self.consume();
+                self.consume_unchecked();
                 Ok(expr)
             }
         }
@@ -330,14 +282,14 @@ impl Parser {
     pub fn syncronise(&mut self) -> bool {
         println!("syncronising parser");
         while let Some(token) = self.token() {
-            match &token.instance {
-                TokenInstance::Semicolon => {
-                    self.consume();
+            match &token.kind {
+                TokenKind::Semicolon => {
+                    self.consume_unchecked();
                     return true;
                 }
 
                 _ => {
-                    self.consume();
+                    self.consume_unchecked();
                     continue;
                 }
             }
