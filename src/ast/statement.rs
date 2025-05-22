@@ -13,6 +13,10 @@ pub enum Statement {
     Declaration { id: Expression, e: Expression },
 
     Assignment { id: Expression, e: Expression },
+
+    BlockEnter,
+
+    BlockExit,
 }
 
 impl Statement {

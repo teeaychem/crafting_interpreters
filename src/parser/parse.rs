@@ -81,6 +81,16 @@ impl Parser {
                     self.close_statement()?;
                 }
 
+                BraceLeft => {
+                    self.add_statement(Statement::BlockEnter);
+                    self.consume_unchecked();
+                }
+
+                BraceRight => {
+                    self.add_statement(Statement::BlockExit);
+                    self.consume_unchecked();
+                }
+
                 _ => match self.expression() {
                     Err(_) => todo!("Statment todo"),
 
