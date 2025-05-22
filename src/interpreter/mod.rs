@@ -1,5 +1,7 @@
 use std::{collections::HashMap, io::Write};
 
+use environment::Env;
+
 use crate::{
     ast::{
         expression::Expression,
@@ -9,11 +11,12 @@ use crate::{
     parser::value::{self, Value, ValueError},
 };
 
+pub mod environment;
 pub mod evaluate;
 
 pub struct Interpreter<'i> {
     out: Box<dyn Write + 'i>,
-    env: HashMap<String, Value>,
+    env: Env,
 }
 
 impl<'i> Interpreter<'i> {
@@ -26,7 +29,7 @@ impl Interpreter<'_> {
     pub fn new() -> Self {
         Interpreter {
             out: Box::new(std::io::stdout()),
-            env: HashMap::default(),
+            env: Env::default(),
         }
     }
 
@@ -47,7 +50,7 @@ impl Interpreter<'_> {
 
                 let assignment = self.evaluate(e)?;
 
-                self.env.insert(id, assignment);
+                self.env.insert(id, &assignment);
             }
 
             _ => todo!("Inpereter todo: {statement:?}"),
