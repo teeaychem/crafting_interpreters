@@ -67,7 +67,7 @@ impl Interpreter<'_> {
 
                 let name = self.get_identifier(name)?;
 
-                self.env.insert(name, assignment.clone());
+                self.env.insert(name, &assignment);
 
                 assignment
             }
