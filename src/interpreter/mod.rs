@@ -185,4 +185,38 @@ print a;
 ";
         test_io(input, "nil\n1\nnil");
     }
+
+        #[test]
+    fn block_nested() {
+        let input = "
+var a = \"global a\";
+var b = \"global b\";
+var c = \"global c\";
+{
+  var a = \"outer a\";
+  var b = \"outer b\";
+  {
+    var a = \"inner a\";
+    print a;
+    print b;
+    print c;
+  }
+  print a;
+  print b;
+  print c;
+}
+print a;
+print b;
+print c;
+";
+        test_io(input, "inner a
+outer b
+global c
+outer a
+outer b
+global c
+global a
+global b
+global c");
+    }
 }
