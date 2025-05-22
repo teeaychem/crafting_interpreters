@@ -53,6 +53,14 @@ impl Interpreter<'_> {
                 self.env.insert(id, &assignment);
             }
 
+            Statement::BlockEnter => {
+                self.env.narrow();
+            }
+
+            Statement::BlockExit => {
+                self.env.relax();
+            }
+
             _ => todo!("Inpereter todo: {statement:?}"),
         }
 
@@ -162,5 +170,19 @@ print (a * b) / (a + b);";
 var a;
 print a;";
         test_io(input, "nil");
+    }
+
+    #[test]
+    fn block_basic() {
+        let input = "
+var a;
+print a;
+{
+  a = 1;
+  print a;
+}
+print a;
+";
+        test_io(input, "nil\n1\nnil");
     }
 }
