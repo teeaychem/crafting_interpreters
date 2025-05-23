@@ -45,64 +45,103 @@ impl Parser {
 
 impl Parser {
     pub fn parse(&mut self) -> Result<(), ParseError> {
-        self.statement()
-    }
+        loop {
+            match self.statement() {
+                Ok(stmt) => self.add_statement(stmt),
 
-    fn statement(&mut self) -> Result<(), ParseError> {
-        while let Some(token) = self.token() {
-            use TokenKind::*;
+                Err(ParseError::TokensExhausted) => break,
 
-            match token.kind {
-                Print => {
-                    self.consume_unchecked();
-                    let expr = self.expression()?;
-                    self.add_statement(Statement::print(expr));
-                    self.close_statement()?;
-                }
-
-                Var => {
-                    self.consume_unchecked();
-
-                    match self.expression()? {
-                        Expression::Assignment { id, e: assignment } => {
-                            self.add_statement(Statement::declaration(*id, Some(*assignment)));
-                        }
-
-                        Expression::Identifier { id } => {
-                            self.add_statement(Statement::declaration(
-                                Expression::identifier(id),
-                                None,
-                            ));
-                        }
-
-                        _ => return Err(ParseError::ExpectedAssignment),
-                    };
-
-                    self.close_statement()?;
-                }
-
-                BraceLeft => {
-                    self.add_statement(Statement::BlockEnter);
-                    self.consume_unchecked();
-                }
-
-                BraceRight => {
-                    self.add_statement(Statement::BlockExit);
-                    self.consume_unchecked();
-                }
-
-                _ => match self.expression() {
-                    Err(_) => todo!("Statment todo"),
-
-                    Ok(e) => {
-                        self.add_statement(Statement::Expression { e });
-                        self.close_statement()?;
-                    }
-                },
+                Err(e) => panic!("{e:?}"),
             }
         }
 
         Ok(())
+    }
+
+    fn statement(&mut self) -> Result<Statement, ParseError> {
+        use TokenKind::*;
+        let stmt;
+
+        let token = match self.token() {
+            Some(t) => t,
+            None => return Err(ParseError::TokensExhausted),
+        };
+
+        match token.kind {
+            Print => {
+                self.consume_unchecked();
+                let expr = self.expression()?;
+                stmt = Statement::print(expr);
+                self.close_statement()?;
+            }
+
+            Var => {
+                self.consume_unchecked();
+
+                match self.expression()? {
+                    Expression::Assignment { id, e: assignment } => {
+                        stmt = Statement::declaration(*id, Some(*assignment));
+                    }
+
+                    Expression::Identifier { id } => {
+                        stmt = Statement::declaration(Expression::identifier(id), None);
+                    }
+
+                    _ => return Err(ParseError::ExpectedAssignment),
+                };
+
+                self.close_statement()?;
+            }
+
+            BraceLeft => {
+                stmt = Statement::BlockEnter;
+                self.consume_unchecked();
+            }
+
+            BraceRight => {
+                stmt = Statement::BlockExit;
+                self.consume_unchecked();
+            }
+
+            If => {
+                self.consume_unchecked();
+                self.consume_checked(&ParenLeft);
+                let expr = self.expression()?;
+                self.consume_checked(&ParenRight);
+                let yes = self.statement()?;
+                let mut no = None;
+
+                match self.token() {
+                    Some(t) => {
+                        if t.kind == TokenKind::Else {
+                            self.consume_unchecked();
+                            no = Some(Box::new(self.statement()?));
+                        }
+                    }
+
+                    Some(_) | None => {}
+                }
+
+                stmt = Statement::Conditional {
+                    condition: expr,
+                    yes: Box::new(yes),
+                    no,
+                };
+
+                self.close_statement();
+            }
+
+            _ => match self.expression() {
+                Err(_) => todo!("Statment todo"),
+
+                Ok(e) => {
+                    stmt = Statement::Expression { e };
+                    self.close_statement()?;
+                }
+            },
+        }
+
+        Ok(stmt)
     }
 
     pub fn expression(&mut self) -> Result<Expression, ParseError> {

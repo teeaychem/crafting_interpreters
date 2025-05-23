@@ -6,13 +6,29 @@ pub type Statements = Vec<Statement>;
 
 #[derive(Debug)]
 pub enum Statement {
-    Expression { e: Expression },
+    Expression {
+        e: Expression,
+    },
 
-    Print { e: Expression },
+    Print {
+        e: Expression,
+    },
 
-    Declaration { id: Expression, e: Expression },
+    Declaration {
+        id: Expression,
+        e: Expression,
+    },
 
-    Assignment { id: Expression, e: Expression },
+    Assignment {
+        id: Expression,
+        e: Expression,
+    },
+
+    Conditional {
+        condition: Expression,
+        yes: Box<Statement>,
+        no: Option<Box<Statement>>,
+    },
 
     BlockEnter,
 
