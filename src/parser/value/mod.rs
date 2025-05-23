@@ -2,7 +2,7 @@ mod conversion;
 
 use std::borrow::Borrow;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Value {
     Numeric { n: f64 },
     String { s: String },
@@ -18,40 +18,18 @@ pub enum ValueError {
     InvalidIdentifier,
 }
 
-impl std::cmp::PartialEq for Value {
-    fn eq(&self, other: &Self) -> bool {
-        use Value::*;
-        match (self, other) {
-            (Boolean { .. }, Boolean { .. }) => true,
-
-            (Numeric { .. }, Numeric { .. }) => true,
-
-            (String { .. }, String { .. }) => true,
-
-            _ => false,
+impl Value {
+    pub fn is_truthy(&self) -> bool {
+        match self {
+            Value::Numeric { n } => true,
+            Value::String { s } => true,
+            Value::Boolean { b } => *b,
+            Value::Nil => false,
         }
     }
-}
 
-impl std::cmp::PartialOrd for Value {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        use std::cmp::Ordering::*;
-        use Value::*;
-
-        match (self, other) {
-            (Nil, _) => None,
-            (_, Nil) => None,
-
-            (Boolean { .. }, Boolean { .. }) => Some(Equal),
-            (Boolean { .. }, _) => Some(Greater),
-
-            (Numeric { .. }, Boolean { .. }) => Some(Less),
-            (Numeric { .. }, Numeric { .. }) => Some(Equal),
-            (Numeric { .. }, String { .. }) => Some(Greater),
-
-            (String { .. }, String { .. }) => Some(Equal),
-            (String { .. }, _) => Some(Less),
-        }
+    pub fn is_falsey(&self) -> bool {
+        !self.is_truthy()
     }
 }
 

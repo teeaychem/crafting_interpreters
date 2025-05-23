@@ -81,7 +81,7 @@ mod test {
 
     #[test]
     fn string() {
-        assert_eq!(Ok(Value::from("64.0")), Value::from(64.0).to_string());
+        assert_eq!(Ok(Value::from("64")), Value::from(64.0).to_string());
         assert_eq!(Ok(Value::from("true")), Value::from(true).to_string());
     }
 }

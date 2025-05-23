@@ -49,7 +49,7 @@ impl Interpreter<'_> {
     pub fn evaluate(&mut self, expr: &Expression) -> Result<Value, ValueError> {
         let value = match expr {
             Expression::Empty => Value::Nil,
-            
+
             Expression::Literal { l } => Value::from(l.to_owned()),
 
             Expression::Identifier { id: l } => match l {
@@ -62,7 +62,10 @@ impl Interpreter<'_> {
                 _ => todo!("Eval declaration"),
             },
 
-            Expression::Assignment { id: name, e: assignment } => {
+            Expression::Assignment {
+                id: name,
+                e: assignment,
+            } => {
                 let assignment = self.evaluate(assignment)?;
 
                 let name = self.get_identifier(name)?;

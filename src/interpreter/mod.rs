@@ -61,6 +61,14 @@ impl Interpreter<'_> {
                 self.env.relax();
             }
 
+            Statement::Conditional { condition, yes, no } => {
+                if self.evaluate(condition)?.is_truthy() {
+                    self.interpret(yes);
+                } else if let Some(no) = no {
+                    self.interpret(no);
+                }
+            }
+
             _ => todo!("Inpereter todo: {statement:?}"),
         }
 
@@ -186,7 +194,7 @@ print a;
         test_io(input, "nil\n1\nnil");
     }
 
-        #[test]
+    #[test]
     fn block_nested() {
         let input = "
 var a = \"global a\";
@@ -209,7 +217,9 @@ print a;
 print b;
 print c;
 ";
-        test_io(input, "inner a
+        test_io(
+            input,
+            "inner a
 outer b
 global c
 outer a
@@ -217,6 +227,34 @@ outer b
 global c
 global a
 global b
-global c");
+global c",
+        );
+    }
+
+    #[test]
+    fn challenge() {
+        let input = "
+var a = 1;
+{
+var a = a + 2;
+print a;
+}";
+
+        test_io(input, "3");
+    }
+
+    #[test]
+    fn conditional() {
+        let input = "
+if (false != true) print \"ok\";";
+        test_io(input, "ok");
+
+        let input = "
+if (false == true) print \"nok\";";
+        test_io(input, "");
+
+        let input = "
+if (false == true) print \"nok\"; else print \"ok\";";
+        test_io(input, "ok");
     }
 }

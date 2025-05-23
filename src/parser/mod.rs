@@ -18,6 +18,7 @@ pub enum ParseError {
     OpenStatement,
     InvalidAsignee,
     ExpectedAssignment,
+    TokensExhausted
 }
 
 #[derive(Debug)]
@@ -57,7 +58,6 @@ impl Parser {
     }
 
     pub fn add_statement(&mut self, statement: Statement) {
-        println!("Adding: {statement:?}");
         self.statements.push(statement);
     }
 }
