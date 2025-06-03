@@ -6,5 +6,4 @@ pub use interpreter::scanner::Scanner;
 pub use interpreter::parser::Parser;
 pub use interpreter::Interpreter;
 
-mod interpreter;
-
+pub mod interpreter;
