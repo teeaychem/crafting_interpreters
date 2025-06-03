@@ -1,6 +1,6 @@
 use std::io::BufWriter;
 
-use loxy::{Interpreter, Parser, Scanner};
+use loxy_lib::{Interpreter, Parser, Scanner};
 
 fn test_io(input: &str, output: &str) {
     let mut scanner = Scanner::default();
@@ -242,4 +242,14 @@ else
   print "ok";
 "#;
     test_io(input, "ok");
+}
+
+#[test]
+fn logic_mix() {
+    let input = r#"
+var a = 2 * 2;
+if ((a or false) and 2 / 2 == 1)
+  print a;
+"#;
+    test_io(input, "4");
 }
