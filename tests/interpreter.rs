@@ -1,103 +1,105 @@
-use std::io::BufWriter;
+#[cfg(test)]
+mod interpreter {
+    use std::io::BufWriter;
 
-use loxy_lib::{Interpreter, Parser, Scanner};
+    use loxy_lib::{Interpreter, Parser, Scanner};
 
-fn test_io(input: &str, output: &str) {
-    let mut scanner = Scanner::default();
-    let mut parser = Parser::default();
+    fn test_io(input: &str, output: &str) {
+        let mut scanner = Scanner::default();
+        let mut parser = Parser::default();
 
-    scanner.scan(input);
-    parser.consume_scanner(scanner);
-    match parser.parse() {
-        Ok(_) => {}
-
-        Err(e) => {
-            println!("Parser failure: {e:?}");
-            dbg!(&parser);
-            panic!();
-        }
-    };
-
-    let mut buffer = Vec::with_capacity(output.len());
-    let mut stream = BufWriter::new(&mut buffer);
-
-    {
-        let mut interpreter = Interpreter::new();
-
-        interpreter.set_destination(&mut stream);
-
-        match interpreter.interpret_all(parser.statements()) {
+        scanner.scan(input);
+        parser.consume_scanner(scanner);
+        match parser.parse() {
             Ok(_) => {}
 
-            Err(e) => panic!("Interpretation error: {e:?}"),
+            Err(e) => {
+                println!("Parser failure: {e:?}");
+                dbg!(&parser);
+                panic!();
+            }
         };
+
+        let mut buffer = Vec::with_capacity(output.len());
+        let mut stream = BufWriter::new(&mut buffer);
+
+        {
+            let mut interpreter = Interpreter::new();
+
+            interpreter.set_destination(&mut stream);
+
+            match interpreter.interpret_all(parser.statements()) {
+                Ok(_) => {}
+
+                Err(e) => panic!("Interpretation error: {e:?}"),
+            };
+        }
+
+        let buffer_string = std::str::from_utf8(&stream.buffer());
+
+        assert_eq!(buffer_string.expect("Failed to interpret").trim(), output);
     }
 
-    let buffer_string = std::str::from_utf8(&stream.buffer());
+    #[test]
+    fn print() {
+        test_io("print 5 + 5; print 5 - 5; ", "10\n0");
 
-    assert_eq!(buffer_string.expect("Failed to interpret").trim(), output);
-}
+        test_io("print true;", "true");
 
-#[test]
-fn print() {
-    test_io("print 5 + 5; print 5 - 5; ", "10\n0");
+        test_io("print !true;", "false");
+    }
 
-    test_io("print true;", "true");
+    #[test]
+    fn print_string() {
+        let input = r#"print "print";"#;
 
-    test_io("print !true;", "false");
-}
+        test_io(input, "print");
+    }
 
-#[test]
-fn print_string() {
-    let input = r#"print "print";"#;
-
-    test_io(input, "print");
-}
-
-#[test]
-fn declaration() {
-    let input = r#"
+    #[test]
+    fn declaration() {
+        let input = r#"
 var test = "testing";
 test = "testing again";
 print test;"#;
 
-    test_io(input, "testing again");
-}
+        test_io(input, "testing again");
+    }
 
-#[test]
-fn nested() {
-    let input = r#"
+    #[test]
+    fn nested() {
+        let input = r#"
 var a = "a";
 var b = "b";
 a = b = "c";
 print a;
 "#;
 
-    test_io(input, "c");
-}
+        test_io(input, "c");
+    }
 
-#[test]
-fn print_addition() {
-    let input = "
+    #[test]
+    fn print_addition() {
+        let input = "
 var a = 3;
 var b = 3;
 print (a * b) / (a + b);
 ";
-    test_io(input, "1.5");
-}
+        test_io(input, "1.5");
+    }
 
-#[test]
-fn var_nil() {
-    let input = "
+    #[test]
+    fn var_nil() {
+        let input = "
 var a;
 print a;
 ";
-    test_io(input, "nil");
-}
+        test_io(input, "nil");
+    }
 
-#[test]
-fn block_basic() {
-    let input = "
+    #[test]
+    fn block_basic() {
+        let input = "
 var a;
 print a;
 {
@@ -106,12 +108,12 @@ print a;
 }
 print a;
 ";
-    test_io(input, "nil\n1\nnil");
-}
+        test_io(input, "nil\n1\nnil");
+    }
 
-#[test]
-fn block_nested() {
-    let input = r#"
+    #[test]
+    fn block_nested() {
+        let input = r#"
 var a = "global a";
 var b = "global b";
 var c = "global c";
@@ -132,9 +134,9 @@ print a;
 print b;
 print c;
 "#;
-    test_io(
-        input,
-        "inner a
+        test_io(
+            input,
+            "inner a
 outer b
 global c
 outer a
@@ -143,12 +145,12 @@ global c
 global a
 global b
 global c",
-    );
-}
+        );
+    }
 
-#[test]
-fn challenge() {
-    let input = r#"
+    #[test]
+    fn challenge() {
+        let input = r#"
 var a = 1;
 {
    var a = a + 2;
@@ -156,100 +158,101 @@ var a = 1;
 }
 "#;
 
-    test_io(input, "3");
-}
+        test_io(input, "3");
+    }
 
-#[test]
-fn conditional() {
-    let input = r#"
+    #[test]
+    fn conditional() {
+        let input = r#"
 if (false != true)
   print "ok";
 "#;
-    test_io(input, "ok");
+        test_io(input, "ok");
 
-    let input = r#"
+        let input = r#"
 if (false == true)
   print "nok";
 "#;
-    test_io(input, "");
+        test_io(input, "");
 
-    let input = r#"
+        let input = r#"
 if (false == true)
   print "nok";
 else
   print "ok";
 "#;
-    test_io(input, "ok");
-}
+        test_io(input, "ok");
+    }
 
-#[test]
-fn logic_or() {
-    let input = r#"
+    #[test]
+    fn logic_or() {
+        let input = r#"
 if (true or true)
   print "ok";
 "#;
-    test_io(input, "ok");
+        test_io(input, "ok");
 
-    let input = r#"
+        let input = r#"
 if (true or false)
   print "ok";
 "#;
-    test_io(input, "ok");
+        test_io(input, "ok");
 
-    let input = r#"
+        let input = r#"
 if (false or true)
   print "ok";
 "#;
-    test_io(input, "ok");
+        test_io(input, "ok");
 
-    let input = r#"
+        let input = r#"
 if (false or false)
   print "nok";
 else
   print "ok";
 "#;
-    test_io(input, "ok");
-}
+        test_io(input, "ok");
+    }
 
-#[test]
-fn logic_and() {
-    let input = r#"
+    #[test]
+    fn logic_and() {
+        let input = r#"
 if (true and true)
   print "ok";
 "#;
-    test_io(input, "ok");
+        test_io(input, "ok");
 
-    let input = r#"
+        let input = r#"
 if (true and false)
   print "nok";
 else
   print "ok";
 "#;
-    test_io(input, "ok");
+        test_io(input, "ok");
 
-    let input = r#"
+        let input = r#"
 if (false and true)
   print "nok";
 else
   print "ok";
 "#;
-    test_io(input, "ok");
+        test_io(input, "ok");
 
-    let input = r#"
+        let input = r#"
 if (false and false)
   print "nok";
 else
   print "ok";
 "#;
-    test_io(input, "ok");
-}
+        test_io(input, "ok");
+    }
 
-#[test]
-fn logic_mix() {
-    let input = r#"
+    #[test]
+    fn logic_mix() {
+        let input = r#"
 var a = 2 * 2;
 if ((a or false) and 2 / 2 == 1)
   print a;
 "#;
-    test_io(input, "4");
+        test_io(input, "4");
+    }
 }

@@ -1,7 +1,5 @@
 use std::{collections::HashMap, io::Write};
 
-
-
 use std::io::BufRead;
 
 pub mod ast;
@@ -22,8 +20,6 @@ use crate::interpreter::{
 
 pub mod environment;
 pub mod evaluate;
-
-
 
 pub struct Interpreter<'i> {
     out: Box<dyn Write + 'i>,
