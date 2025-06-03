@@ -18,7 +18,7 @@ impl Default for Env {
 
 impl Env {
     pub fn current_mut(&mut self) -> &mut Assignments {
-        // # Safety: A global assignemt is on the stack
+        // # Safety: A global assignemt is always on the stack
         unsafe { self.stack.last_mut().unwrap_unchecked() }
     }
 

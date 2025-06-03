@@ -36,13 +36,9 @@ impl Interpreter<'_> {
 
     pub fn get_identifier(&mut self, expr: &Expression) -> Result<String, ValueError> {
         match expr {
-            Expression::Identifier {
-                id: Literal::String { s },
-            } => Ok(s.to_owned()),
+            Expression::Identifier { id: i } => Ok(i.to_owned()),
 
-            _ => {
-                return Err(ValueError::InvalidAsignTo);
-            }
+            _ => Err(ValueError::InvalidAsignTo),
         }
     }
 
@@ -52,14 +48,10 @@ impl Interpreter<'_> {
 
             Expression::Literal { l } => Value::from(l.to_owned()),
 
-            Expression::Identifier { id: l } => match l {
-                Literal::String { s } => match self.env.get(s) {
-                    None => return Err(ValueError::InvalidIdentifier),
+            Expression::Identifier { id } => match self.env.get(id) {
+                None => return Err(ValueError::InvalidIdentifier),
 
-                    Some(e) => return Ok(e.to_owned()),
-                },
-
-                _ => todo!("Eval declaration"),
+                Some(e) => return Ok(e.to_owned()),
             },
 
             Expression::Assignment {
@@ -118,6 +110,14 @@ impl Interpreter<'_> {
 
                     Neq => Value::from(self.evaluate(l)? != self.evaluate(r)?),
                 }
+            }
+
+            Expression::Or { a, b } => {
+                Value::from(self.evaluate(a)?.is_truthy() || self.evaluate(b)?.is_truthy())
+            }
+
+            Expression::And { a, b } => {
+                Value::from(self.evaluate(a)?.is_truthy() && self.evaluate(b)?.is_truthy())
             }
         };
 

@@ -183,3 +183,65 @@ else
 "#;
     test_io(input, "ok");
 }
+
+#[test]
+fn logic_or() {
+    let input = r#"
+if (true or true)
+  print "ok";
+"#;
+    test_io(input, "ok");
+
+    let input = r#"
+if (true or false)
+  print "ok";
+"#;
+    test_io(input, "ok");
+
+    let input = r#"
+if (false or true)
+  print "ok";
+"#;
+    test_io(input, "ok");
+
+    let input = r#"
+if (false or false)
+  print "nok";
+else
+  print "ok";
+"#;
+    test_io(input, "ok");
+}
+
+#[test]
+fn logic_and() {
+    let input = r#"
+if (true and true)
+  print "ok";
+"#;
+    test_io(input, "ok");
+
+    let input = r#"
+if (true and false)
+  print "nok";
+else
+  print "ok";
+"#;
+    test_io(input, "ok");
+
+    let input = r#"
+if (false and true)
+  print "nok";
+else
+  print "ok";
+"#;
+    test_io(input, "ok");
+
+    let input = r#"
+if (false and false)
+  print "nok";
+else
+  print "ok";
+"#;
+    test_io(input, "ok");
+}

@@ -26,8 +26,8 @@ pub enum Statement {
 
     Conditional {
         condition: Expression,
-        yes: Box<Statement>,
-        no: Option<Box<Statement>>,
+        case_if: Box<Statement>,
+        case_else: Option<Box<Statement>>,
     },
 
     BlockEnter,
@@ -57,5 +57,20 @@ impl Statement {
 
     pub fn assignment(id: Expression, e: Expression) -> Self {
         Statement::Assignment { id, e }
+    }
+
+    pub fn conditional(
+        condition: Expression,
+        case_if: Statement,
+        case_else: Option<Statement>,
+    ) -> Self {
+        Statement::Conditional {
+            condition,
+            case_if: Box::new(case_if),
+            case_else: match case_else {
+                Some(case) => Some(Box::new(case)),
+                None => None,
+            },
+        }
     }
 }

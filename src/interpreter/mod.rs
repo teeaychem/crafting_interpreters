@@ -64,7 +64,7 @@ impl Interpreter<'_> {
                 self.env.relax();
             }
 
-            Statement::Conditional { condition, yes, no } => {
+            Statement::Conditional { condition, case_if: yes, case_else: no } => {
                 if self.evaluate(condition)?.is_truthy() {
                     self.interpret(yes);
                 } else if let Some(no) = no {
