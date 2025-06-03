@@ -1,7 +1,7 @@
-use crate::ast::expression::{Expression, OpB, OpU};
-use crate::ast::literal::Literal;
-use crate::scanner::token::{self, Token};
-use crate::{ast::statement::Statement, scanner::token::TokenKind};
+use crate::interpreter::ast::expression::{Expression, OpB, OpU};
+use crate::interpreter::ast::literal::Literal;
+use crate::interpreter::scanner::token::{self, Token};
+use crate::interpreter::{ast::statement::Statement, scanner::token::TokenKind};
 
 use super::{ParseError, Parser};
 
@@ -323,7 +323,7 @@ impl Parser {
     }
 
     fn primary(&mut self) -> Result<Expression, ParseError> {
-        use crate::scanner::token::TokenKind::*;
+        use crate::interpreter::scanner::token::TokenKind::*;
         match self.token() {
             None => Err(ParseError::MissingToken),
 

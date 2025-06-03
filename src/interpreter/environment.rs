@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::parser::value::Value;
+use crate::interpreter::parser::value::Value;
 
 pub type Assignments = HashMap<String, Value>;
 

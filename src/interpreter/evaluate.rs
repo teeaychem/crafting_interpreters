@@ -1,7 +1,7 @@
 use core::panic;
 
 use super::{Expression, Interpreter};
-use crate::{
+use crate::interpreter::{
     ast::{
         expression::{OpB, OpU},
         literal::{self, Literal},

@@ -1,8 +1,6 @@
 use std::io::BufWriter;
 
-use crate::{parser::Parser, scanner::Scanner};
-
-use super::*;
+use loxy::{Interpreter, Parser, Scanner};
 
 fn test_io(input: &str, output: &str) {
     let mut scanner = Scanner::default();

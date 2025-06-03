@@ -1,8 +1,17 @@
 use std::{collections::HashMap, io::Write};
 
+
+
+use std::io::BufRead;
+
+pub mod ast;
+pub mod location;
+pub mod parser;
+pub mod scanner;
+
 use environment::Env;
 
-use crate::{
+use crate::interpreter::{
     ast::{
         expression::Expression,
         literal::Literal,
@@ -14,8 +23,7 @@ use crate::{
 pub mod environment;
 pub mod evaluate;
 
-#[cfg(test)]
-mod tests;
+
 
 pub struct Interpreter<'i> {
     out: Box<dyn Write + 'i>,
@@ -64,7 +72,11 @@ impl Interpreter<'_> {
                 self.env.relax();
             }
 
-            Statement::Conditional { condition, case_if: yes, case_else: no } => {
+            Statement::Conditional {
+                condition,
+                case_if: yes,
+                case_else: no,
+            } => {
                 if self.evaluate(condition)?.is_truthy() {
                     self.interpret(yes);
                 } else if let Some(no) = no {
