@@ -113,11 +113,25 @@ impl Interpreter<'_> {
             }
 
             Expression::Or { a, b } => {
-                Value::from(self.evaluate(a)?.is_truthy() || self.evaluate(b)?.is_truthy())
+                let a_value = self.evaluate(a)?;
+
+                if a_value.is_truthy() {
+                    a_value
+                } else {
+                    self.evaluate(b)?
+                }
+
             }
 
             Expression::And { a, b } => {
-                Value::from(self.evaluate(a)?.is_truthy() && self.evaluate(b)?.is_truthy())
+                let a_value = self.evaluate(a)?;
+
+                if a_value.is_falsey() {
+                    a_value
+                } else {
+                    self.evaluate(b)?
+                }
+
             }
         };
 
