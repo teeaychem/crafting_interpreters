@@ -11,7 +11,7 @@ pub enum Expression {
     },
 
     Identifier {
-        id: Literal,
+        id: String,
     },
 
     Assignment {
@@ -28,6 +28,16 @@ pub enum Expression {
         op: OpB,
         l: Box<Expression>,
         r: Box<Expression>,
+    },
+
+    Or {
+        a: Box<Expression>,
+        b: Box<Expression>,
+    },
+
+    And {
+        a: Box<Expression>,
+        b: Box<Expression>,
     },
 
     Grouping {
@@ -59,8 +69,22 @@ impl Expression {
         Expression::Literal { l: literal }
     }
 
-    pub fn identifier(id: Literal) -> Self {
+    pub fn identifier(id: String) -> Self {
         Expression::Identifier { id }
+    }
+
+    pub fn or(a: Expression, b: Expression) -> Self {
+        Expression::Or {
+            a: Box::new(a),
+            b: Box::new(b),
+        }
+    }
+
+    pub fn and(a: Expression, b: Expression) -> Self {
+        Expression::And {
+            a: Box::new(a),
+            b: Box::new(b),
+        }
     }
 }
 
@@ -130,6 +154,8 @@ impl Display for Expression {
             Self::Grouping { e } => write!(f, "(group {e})"),
             Self::Unary { op, e } => write!(f, "({op} {e})"),
             Self::Binary { op, l, r } => write!(f, "({op} {l} {r})"),
+            Self::Or { a, b } => write!(f, "(OR {a} {b})"),
+            Self::And { a, b } => write!(f, "(AND {a} {b})"),
         }
     }
 }

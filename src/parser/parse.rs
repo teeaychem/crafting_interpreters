@@ -10,6 +10,24 @@ impl Parser {
         self.tokens.get(self.index)
     }
 
+    pub fn token_kind(&self) -> Option<&TokenKind> {
+        match self.tokens.get(self.index) {
+            Some(token) => Some(&token.kind),
+            None => None,
+        }
+    }
+
+    pub fn token_ahead(&self, ahead: usize) -> Option<&Token> {
+        self.tokens.get(self.index + ahead)
+    }
+
+    pub fn token_kind_ahead(&self, ahead: usize) -> Option<&TokenKind> {
+        match self.tokens.get(self.index + ahead) {
+            Some(token) => Some(&token.kind),
+            None => None,
+        }
+    }
+
     fn consume_unchecked(&mut self) {
         self.index += 1
     }
@@ -108,25 +126,18 @@ impl Parser {
                 self.consume_checked(&ParenLeft);
                 let expr = self.expression()?;
                 self.consume_checked(&ParenRight);
-                let yes = self.statement()?;
-                let mut no = None;
 
-                match self.token() {
-                    Some(t) => {
-                        if t.kind == TokenKind::Else {
-                            self.consume_unchecked();
-                            no = Some(Box::new(self.statement()?));
-                        }
+                let case_if = self.statement()?;
+                let mut case_else = None;
+
+                if let Some(t) = self.token() {
+                    if t.kind == TokenKind::Else {
+                        self.consume_unchecked();
+                        case_else = Some(self.statement()?);
                     }
-
-                    Some(_) | None => {}
                 }
 
-                stmt = Statement::Conditional {
-                    condition: expr,
-                    yes: Box::new(yes),
-                    no,
-                };
+                stmt = Statement::conditional(expr, case_if, case_else);
 
                 self.close_statement();
             }
@@ -135,7 +146,7 @@ impl Parser {
                 Err(_) => todo!("Statment todo"),
 
                 Ok(e) => {
-                    stmt = Statement::Expression { e };
+                    stmt = Statement::expression(e);
                     self.close_statement()?;
                 }
             },
@@ -149,18 +160,41 @@ impl Parser {
     }
 
     fn assignment(&mut self) -> Result<Expression, ParseError> {
+        if let Some(TokenKind::Identifier { id }) = self.token_kind() {
+            if let Some(TokenKind::Equal) = self.token_kind_ahead(1) {
+                let id = Expression::identifier(id.to_owned());
+
+                self.consume_unchecked();
+                self.consume_checked(&TokenKind::Equal);
+                let assignment = self.assignment()?;
+                let expr = Expression::assignment(id, assignment);
+
+                return Ok(expr);
+            }
+        }
+
+        self.logic_or()
+    }
+
+    fn logic_or(&mut self) -> Result<Expression, ParseError> {
+        let mut expr = self.logic_and()?;
+
+        while let Some(TokenKind::Or) = self.token_kind() {
+            self.consume_unchecked();
+            let right = self.logic_and()?;
+            expr = Expression::or(expr, right);
+        }
+
+        Ok(expr)
+    }
+
+    fn logic_and(&mut self) -> Result<Expression, ParseError> {
         let mut expr = self.equality()?;
 
-        if let Some(token) = self.token() {
-            match &token.kind {
-                TokenKind::Equal => {
-                    self.consume_unchecked();
-                    let assignment = self.assignment()?;
-                    expr = Expression::assignment(expr, assignment)
-                }
-
-                _ => {}
-            }
+        while let Some(TokenKind::And) = self.token_kind() {
+            self.consume_unchecked();
+            let right = self.equality()?;
+            expr = Expression::and(expr, right);
         }
 
         Ok(expr)
@@ -193,7 +227,7 @@ impl Parser {
     fn comparison(&mut self) -> Result<Expression, ParseError> {
         let mut expr = self.term()?;
 
-        while let Some(token) = self.token() {
+        'comparison_match: while let Some(token) = self.token() {
             match &token.kind {
                 TokenKind::Greater => {
                     self.consume_unchecked();
@@ -215,7 +249,7 @@ impl Parser {
                     expr = Expression::binary(OpB::Leq, expr, self.comparison()?)
                 }
 
-                _ => break,
+                _ => break 'comparison_match,
             }
         }
 
@@ -267,7 +301,7 @@ impl Parser {
 
     fn unary(&mut self) -> Result<Expression, ParseError> {
         match self.token() {
-            None => return Err(ParseError::MissingToken),
+            None => Err(ParseError::MissingToken),
 
             Some(token) => {
                 let expr = match &token.kind {
@@ -291,7 +325,7 @@ impl Parser {
     fn primary(&mut self) -> Result<Expression, ParseError> {
         use crate::scanner::token::TokenKind::*;
         match self.token() {
-            None => return Err(ParseError::MissingToken),
+            None => Err(ParseError::MissingToken),
 
             Some(token) => {
                 let expr = match &token.kind {
@@ -305,7 +339,7 @@ impl Parser {
 
                     Nil => Expression::literal(Literal::Nil),
 
-                    Identifier { id } => Expression::identifier(Literal::from(id.to_owned())),
+                    Identifier { id } => Expression::identifier(id.to_owned()),
 
                     ParenLeft => {
                         self.consume_unchecked();
