@@ -1,6 +1,6 @@
 use std::{iter::Peekable, str::Chars};
 
-use crate::{
+use crate::interpreter::{
     location::Location,
     scanner::token::{Token, TokenError, TokenKind, Tokens},
 };

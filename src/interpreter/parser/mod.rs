@@ -1,4 +1,4 @@
-use crate::{
+use crate::interpreter::{
     ast::statement::{Statement, Statements},
     scanner::{
         self,
@@ -18,7 +18,7 @@ pub enum ParseError {
     OpenStatement,
     InvalidAsignee,
     ExpectedAssignment,
-    TokensExhausted
+    TokensExhausted,
 }
 
 #[derive(Debug)]
@@ -68,7 +68,7 @@ mod tests {
 
     #[test]
     fn simple() {
-        let mut scanner = Scanner::default();        
+        let mut scanner = Scanner::default();
         let input = "! true == false";
 
         scanner.scan(input);
