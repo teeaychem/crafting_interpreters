@@ -1,6 +1,9 @@
-use std::fmt::Display;
+mod builders;
+mod operators;
 
-use super::literal::{self, Literal};
+pub use operators::{OpOne, OpTwo};
+
+use super::literal::Literal;
 
 #[derive(Debug, Clone)]
 pub enum Expression {
@@ -20,14 +23,14 @@ pub enum Expression {
     },
 
     Unary {
-        op: OpU,
+        op: OpOne,
         e: Box<Expression>,
     },
 
     Binary {
-        op: OpB,
-        l: Box<Expression>,
-        r: Box<Expression>,
+        op: OpTwo,
+        a: Box<Expression>,
+        b: Box<Expression>,
     },
 
     Or {
@@ -45,111 +48,7 @@ pub enum Expression {
     },
 }
 
-impl Expression {
-    pub fn mk_assignment(id: Expression, to: Expression) -> Self {
-        Expression::Assignment {
-            id: Box::new(id),
-            e: Box::new(to),
-        }
-    }
-
-    pub fn mk_binary(op: OpB, a: Expression, b: Expression) -> Self {
-        Expression::Binary {
-            op,
-            l: Box::new(a),
-            r: Box::new(b),
-        }
-    }
-
-    pub fn mk_unary(op: OpU, a: Expression) -> Self {
-        Expression::Unary { op, e: Box::new(a) }
-    }
-
-    pub fn mk_literal(literal: Literal) -> Self {
-        Expression::Literal { l: literal }
-    }
-
-    pub fn mk_identifier(id: String) -> Self {
-        Expression::Identifier { id }
-    }
-
-    pub fn mk_or(a: Expression, b: Expression) -> Self {
-        Expression::Or {
-            a: Box::new(a),
-            b: Box::new(b),
-        }
-    }
-
-    pub fn mk_and(a: Expression, b: Expression) -> Self {
-        Expression::And {
-            a: Box::new(a),
-            b: Box::new(b),
-        }
-    }
-
-    pub fn mk_true() -> Self {
-        Expression::Literal { l: Literal::True }
-    }
-
-    pub fn mk_false() -> Self {
-        Expression::Literal { l: Literal::True }
-    }
-}
-
-impl From<Literal> for Expression {
-    fn from(value: Literal) -> Self {
-        Expression::Literal { l: value }
-    }
-}
-
-#[derive(Debug, Clone, Copy)]
-pub enum OpU {
-    Minus,
-    Bang,
-}
-
-impl Display for OpU {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Bang => write!(f, "!"),
-
-            Self::Minus => write!(f, "-"),
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy)]
-pub enum OpB {
-    Eq,
-    Neq,
-    Lt,
-    Leq,
-    Gt,
-    Geq,
-    Plus,
-    Minus,
-    Star,
-    Slash,
-}
-
-impl Display for OpB {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Eq => write!(f, "=="),
-            Self::Neq => write!(f, "!="),
-            Self::Lt => write!(f, "<"),
-            Self::Leq => write!(f, "<="),
-            Self::Gt => write!(f, ">"),
-            Self::Geq => write!(f, ">="),
-            Self::Plus => write!(f, "+"),
-            Self::Minus => write!(f, "-"),
-            Self::Star => write!(f, "*"),
-            Self::Slash => write!(f, "/"),
-        }
-    }
-}
-
-impl Display for Expression {
+impl std::fmt::Display for Expression {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Empty => write!(f, "<Empty>"),
@@ -161,7 +60,7 @@ impl Display for Expression {
             } => write!(f, "{name} = {assignment}"),
             Self::Grouping { e } => write!(f, "(group {e})"),
             Self::Unary { op, e } => write!(f, "({op} {e})"),
-            Self::Binary { op, l, r } => write!(f, "({op} {l} {r})"),
+            Self::Binary { op, a, b } => write!(f, "({op} {a} {b})"),
             Self::Or { a, b } => write!(f, "(OR {a} {b})"),
             Self::And { a, b } => write!(f, "(AND {a} {b})"),
         }
@@ -175,14 +74,14 @@ mod test {
     #[test]
     fn simple_display() {
         let ast = Expression::Binary {
-            op: OpB::Star,
-            l: Box::new(Expression::Unary {
-                op: OpU::Minus,
+            op: OpTwo::Star,
+            a: Box::new(Expression::Unary {
+                op: OpOne::Minus,
                 e: Box::new(Expression::Literal {
                     l: Literal::Number { n: 123_f64 },
                 }),
             }),
-            r: Box::new(Expression::Grouping {
+            b: Box::new(Expression::Grouping {
                 e: Box::new(Expression::Literal {
                     l: Literal::Number { n: 45.67 },
                 }),

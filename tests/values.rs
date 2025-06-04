@@ -2,7 +2,6 @@
 mod value_conversion {
     use loxy_lib::interpreter::parser::value::Value;
 
-
     #[test]
     fn boolean() {
         let true_conversions = [

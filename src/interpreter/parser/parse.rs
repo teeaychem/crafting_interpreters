@@ -1,4 +1,4 @@
-use crate::interpreter::ast::expression::{Expression, OpB, OpU};
+use crate::interpreter::ast::expression::{Expression, OpOne, OpTwo};
 use crate::interpreter::ast::literal::Literal;
 use crate::interpreter::scanner::token::{self, Token};
 use crate::interpreter::{ast::statement::Statement, scanner::token::TokenKind};
@@ -244,14 +244,12 @@ impl Parser {
 
             Err(e) => match &e {
                 ParseError::UnexpectedToken {
-                    token: Token { kind, .. },
-                } => match kind {
-                    exception => Ok(Expression::Empty),
+                    token: Token {
+                        kind: exception, ..
+                    },
+                } => Ok(Expression::Empty),
 
-                    _ => return Err(e),
-                },
-
-                _ => return Err(e),
+                _ => Err(e),
             },
         }
     }
@@ -309,13 +307,13 @@ impl Parser {
                 TokenKind::EqualEqual => {
                     self.consume_unchecked();
                     let right = self.comparison()?;
-                    expr = Expression::mk_binary(OpB::Eq, expr, right)
+                    expr = Expression::mk_binary(OpTwo::Eq, expr, right)
                 }
 
                 TokenKind::BangEqual => {
                     self.consume_unchecked();
                     let right = self.comparison()?;
-                    expr = Expression::mk_binary(OpB::Neq, expr, right);
+                    expr = Expression::mk_binary(OpTwo::Neq, expr, right);
                 }
 
                 _ => break,
@@ -332,22 +330,22 @@ impl Parser {
             match &token.kind {
                 TokenKind::Greater => {
                     self.consume_unchecked();
-                    expr = Expression::mk_binary(OpB::Gt, expr, self.comparison()?)
+                    expr = Expression::mk_binary(OpTwo::Gt, expr, self.comparison()?)
                 }
 
                 TokenKind::GreaterEqual => {
                     self.consume_unchecked();
-                    expr = Expression::mk_binary(OpB::Geq, expr, self.comparison()?)
+                    expr = Expression::mk_binary(OpTwo::Geq, expr, self.comparison()?)
                 }
 
                 TokenKind::Less => {
                     self.consume_unchecked();
-                    expr = Expression::mk_binary(OpB::Lt, expr, self.comparison()?)
+                    expr = Expression::mk_binary(OpTwo::Lt, expr, self.comparison()?)
                 }
 
                 TokenKind::LessEqual => {
                     self.consume_unchecked();
-                    expr = Expression::mk_binary(OpB::Leq, expr, self.comparison()?)
+                    expr = Expression::mk_binary(OpTwo::Leq, expr, self.comparison()?)
                 }
 
                 _ => break 'comparison_match,
@@ -364,12 +362,12 @@ impl Parser {
             match &token.kind {
                 TokenKind::Minus => {
                     self.consume_unchecked();
-                    expr = Expression::mk_binary(OpB::Minus, expr, self.term()?)
+                    expr = Expression::mk_binary(OpTwo::Minus, expr, self.term()?)
                 }
 
                 TokenKind::Plus => {
                     self.consume_unchecked();
-                    expr = Expression::mk_binary(OpB::Plus, expr, self.term()?)
+                    expr = Expression::mk_binary(OpTwo::Plus, expr, self.term()?)
                 }
 
                 _ => break,
@@ -385,12 +383,12 @@ impl Parser {
             match &token.kind {
                 TokenKind::Slash => {
                     self.consume_unchecked();
-                    expr = Expression::mk_binary(OpB::Slash, expr, self.factor()?)
+                    expr = Expression::mk_binary(OpTwo::Slash, expr, self.factor()?)
                 }
 
                 TokenKind::Star => {
                     self.consume_unchecked();
-                    expr = Expression::mk_binary(OpB::Star, expr, self.factor()?)
+                    expr = Expression::mk_binary(OpTwo::Star, expr, self.factor()?)
                 }
 
                 _ => break,
@@ -408,19 +406,23 @@ impl Parser {
                 let expr = match &token.kind {
                     TokenKind::Bang => {
                         self.consume_unchecked();
-                        Expression::mk_unary(OpU::Bang, self.unary()?)
+                        Expression::mk_unary(OpOne::Bang, self.unary()?)
                     }
                     TokenKind::Minus => {
                         self.consume_unchecked();
-                        Expression::mk_unary(OpU::Minus, self.unary()?)
+                        Expression::mk_unary(OpOne::Minus, self.unary()?)
                     }
 
-                    _ => self.primary()?,
+                    _ => self.call()?,
                 };
 
                 Ok(expr)
             }
         }
+    }
+
+    fn call(&mut self) -> Result<Expression, ParseError> {
+        self.primary()
     }
 
     fn primary(&mut self) -> Result<Expression, ParseError> {

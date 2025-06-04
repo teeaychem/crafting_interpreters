@@ -1,11 +1,11 @@
 #[cfg(test)]
 mod scanner {
     use loxy_lib::{
+        Scanner,
         interpreter::{
             location::Location,
             scanner::token::{Token, TokenKind},
         },
-        Scanner,
     };
 
     #[test]

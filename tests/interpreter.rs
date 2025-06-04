@@ -3,8 +3,8 @@ mod interpreter {
     use std::io::BufWriter;
 
     use loxy_lib::{
-        interpreter::{ast::expression::Expression, parser::value::Value},
         Interpreter, Parser, Scanner,
+        interpreter::{ast::expression::Expression, parser::value::Value},
     };
 
     use crate::interpreter;

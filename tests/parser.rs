@@ -2,7 +2,6 @@
 mod parser {
     use loxy_lib::{Parser, Scanner};
 
-
     #[test]
     fn simple() {
         let mut scanner = Scanner::default();

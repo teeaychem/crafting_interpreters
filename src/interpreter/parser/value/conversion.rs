@@ -46,4 +46,3 @@ impl Value {
 
     pub fn parity(a: &mut Value, b: &mut Value) {}
 }
-
