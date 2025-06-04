@@ -64,7 +64,7 @@ impl Parser {
 impl Parser {
     pub fn parse(&mut self) -> Result<(), ParseError> {
         loop {
-            match self.statement() {
+            match self.declaration() {
                 Ok(stmt) => self.add_statement(stmt),
 
                 Err(ParseError::TokensExhausted) => break,
@@ -74,6 +74,32 @@ impl Parser {
         }
 
         Ok(())
+    }
+
+    fn declaration(&mut self) -> Result<Statement, ParseError> {
+        if let Some(TokenKind::Var) = self.token_kind() {
+            self.consume_unchecked();
+
+            let stmt;
+
+            match self.expression()? {
+                Expression::Assignment { id, e: assignment } => {
+                    stmt = Statement::declaration(*id, Some(*assignment));
+                }
+
+                Expression::Identifier { id } => {
+                    stmt = Statement::declaration(Expression::identifier(id), None);
+                }
+
+                _ => return Err(ParseError::ExpectedAssignment),
+            };
+
+            self.close_statement();
+
+            Ok(stmt)
+        } else {
+            self.statement()
+        }
     }
 
     fn statement(&mut self) -> Result<Statement, ParseError> {
@@ -94,31 +120,21 @@ impl Parser {
             }
 
             Var => {
-                self.consume_unchecked();
-
-                match self.expression()? {
-                    Expression::Assignment { id, e: assignment } => {
-                        stmt = Statement::declaration(*id, Some(*assignment));
-                    }
-
-                    Expression::Identifier { id } => {
-                        stmt = Statement::declaration(Expression::identifier(id), None);
-                    }
-
-                    _ => return Err(ParseError::ExpectedAssignment),
-                };
-
-                self.close_statement()?;
+                panic!("Higher precedence")
             }
 
             BraceLeft => {
-                stmt = Statement::BlockEnter;
                 self.consume_unchecked();
-            }
 
-            BraceRight => {
-                stmt = Statement::BlockExit;
-                self.consume_unchecked();
+                let mut statements = Vec::default();
+
+                while self.token_kind().is_some_and(|kind| *kind != BraceRight) {
+                    statements.push(self.declaration()?);
+                }
+
+                self.consume_checked(&BraceRight);
+
+                stmt = Statement::Block { statements };
             }
 
             If => {
@@ -127,19 +143,30 @@ impl Parser {
                 let expr = self.expression()?;
                 self.consume_checked(&ParenRight);
 
-                let case_if = self.statement()?;
+                let case_if = self.declaration()?;
                 let mut case_else = None;
 
                 if let Some(t) = self.token() {
                     if t.kind == TokenKind::Else {
                         self.consume_unchecked();
-                        case_else = Some(self.statement()?);
+                        case_else = Some(self.declaration()?);
                     }
                 }
 
                 stmt = Statement::conditional(expr, case_if, case_else);
 
                 self.close_statement();
+            }
+
+            While => {
+                self.consume_unchecked();
+                self.consume_checked(&ParenLeft);
+                let condition = self.expression()?;
+                self.consume_checked(&ParenRight);
+
+                let body = self.statement()?;
+
+                stmt = Statement::loop_while(condition, body);
             }
 
             _ => match self.expression() {

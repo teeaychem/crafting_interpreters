@@ -62,7 +62,7 @@ impl Interpreter<'_> {
 
                 let name = self.get_identifier(name)?;
 
-                self.env.insert(name, &assignment);
+                self.env.assign(&name, assignment.clone());
 
                 assignment
             }
@@ -120,7 +120,6 @@ impl Interpreter<'_> {
                 } else {
                     self.evaluate(b)?
                 }
-
             }
 
             Expression::And { a, b } => {
@@ -131,11 +130,9 @@ impl Interpreter<'_> {
                 } else {
                     self.evaluate(b)?
                 }
-
             }
         };
 
         Ok(value)
     }
 }
-

@@ -40,6 +40,31 @@ mod interpreter {
         assert_eq!(buffer_string.expect("Failed to interpret").trim(), output);
     }
 
+    fn interpret_stdout(input: &str) {
+        let mut scanner = Scanner::default();
+        let mut parser = Parser::default();
+
+        scanner.scan(input);
+        parser.consume_scanner(scanner);
+        match parser.parse() {
+            Ok(_) => {}
+
+            Err(e) => {
+                println!("Parser failure: {e:?}");
+                dbg!(&parser);
+                panic!();
+            }
+        };
+
+        let mut interpreter = Interpreter::new();
+
+        match interpreter.interpret_all(parser.statements()) {
+            Ok(_) => {}
+
+            Err(e) => panic!("Interpretation error: {e:?}"),
+        };
+    }
+
     #[test]
     fn print() {
         test_io("print 5 + 5; print 5 - 5; ", "10\n0");
@@ -108,7 +133,7 @@ print a;
 }
 print a;
 ";
-        test_io(input, "nil\n1\nnil");
+        test_io(input, "nil\n1\n1");
     }
 
     #[test]
@@ -254,5 +279,18 @@ if ((a or false) and 2 / 2 == 1)
   print a;
 "#;
         test_io(input, "4");
+    }
+
+    #[test]
+    fn loop_while_simple() {
+        let input = r#"
+var a = 1;
+while (a < 4) {
+  print a;
+  a = a + 1;
+}
+print a;
+"#;
+         test_io(input, "1\n2\n3\n4");
     }
 }
