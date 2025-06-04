@@ -2,7 +2,7 @@ use crate::interpreter::location::Location;
 
 pub type Tokens = Vec<Token>;
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Token {
     pub kind: TokenKind,
     pub location: Location,

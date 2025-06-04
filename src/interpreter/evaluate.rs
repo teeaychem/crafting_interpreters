@@ -49,7 +49,10 @@ impl Interpreter<'_> {
             Expression::Literal { l } => Value::from(l.to_owned()),
 
             Expression::Identifier { id } => match self.env.get(id) {
-                None => return Err(ValueError::InvalidIdentifier),
+                None => {
+                    println!("{:?}", self.env);
+                    return Err(ValueError::InvalidIdentifier { id: id.to_owned() })
+                },
 
                 Some(e) => return Ok(e.to_owned()),
             },

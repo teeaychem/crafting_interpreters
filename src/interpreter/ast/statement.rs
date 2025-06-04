@@ -6,6 +6,8 @@ pub type Statements = Vec<Statement>;
 
 #[derive(Debug)]
 pub enum Statement {
+    Empty,
+
     Expression {
         e: Expression,
     },
@@ -41,15 +43,19 @@ pub enum Statement {
 }
 
 impl Statement {
-    pub fn expression(e: Expression) -> Self {
+    pub fn mk_block(statements: Vec<Statement>) -> Self {
+        Self::Block { statements }
+    }
+
+    pub fn mk_expression(e: Expression) -> Self {
         Self::Expression { e }
     }
 
-    pub fn print(e: Expression) -> Self {
+    pub fn mk_print(e: Expression) -> Self {
         Self::Print { e }
     }
 
-    pub fn declaration(id: Expression, e: Option<Expression>) -> Self {
+    pub fn mk_declaration(id: Expression, e: Option<Expression>) -> Self {
         match e {
             Some(expr) => Statement::Declaration { id, e: expr },
 
@@ -60,11 +66,11 @@ impl Statement {
         }
     }
 
-    pub fn assignment(id: Expression, e: Expression) -> Self {
+    pub fn mk_assignment(id: Expression, e: Expression) -> Self {
         Statement::Assignment { id, e }
     }
 
-    pub fn conditional(
+    pub fn mk_conditional(
         condition: Expression,
         case_if: Statement,
         case_else: Option<Statement>,
@@ -79,7 +85,7 @@ impl Statement {
         }
     }
 
-    pub fn loop_while(condition: Expression, body: Statement) -> Self {
+    pub fn mk_while(condition: Expression, body: Statement) -> Self {
         Statement::While {
             condition,
             body: Box::new(body),

@@ -46,14 +46,14 @@ pub enum Expression {
 }
 
 impl Expression {
-    pub fn assignment(id: Expression, to: Expression) -> Self {
+    pub fn mk_assignment(id: Expression, to: Expression) -> Self {
         Expression::Assignment {
             id: Box::new(id),
             e: Box::new(to),
         }
     }
 
-    pub fn binary(op: OpB, a: Expression, b: Expression) -> Self {
+    pub fn mk_binary(op: OpB, a: Expression, b: Expression) -> Self {
         Expression::Binary {
             op,
             l: Box::new(a),
@@ -61,30 +61,38 @@ impl Expression {
         }
     }
 
-    pub fn unary(op: OpU, a: Expression) -> Self {
+    pub fn mk_unary(op: OpU, a: Expression) -> Self {
         Expression::Unary { op, e: Box::new(a) }
     }
 
-    pub fn literal(literal: Literal) -> Self {
+    pub fn mk_literal(literal: Literal) -> Self {
         Expression::Literal { l: literal }
     }
 
-    pub fn identifier(id: String) -> Self {
+    pub fn mk_identifier(id: String) -> Self {
         Expression::Identifier { id }
     }
 
-    pub fn or(a: Expression, b: Expression) -> Self {
+    pub fn mk_or(a: Expression, b: Expression) -> Self {
         Expression::Or {
             a: Box::new(a),
             b: Box::new(b),
         }
     }
 
-    pub fn and(a: Expression, b: Expression) -> Self {
+    pub fn mk_and(a: Expression, b: Expression) -> Self {
         Expression::And {
             a: Box::new(a),
             b: Box::new(b),
         }
+    }
+
+    pub fn mk_true() -> Self {
+        Expression::Literal { l: Literal::True }
+    }
+
+    pub fn mk_false() -> Self {
+        Expression::Literal { l: Literal::True }
     }
 }
 

@@ -2,7 +2,12 @@
 mod interpreter {
     use std::io::BufWriter;
 
-    use loxy_lib::{Interpreter, Parser, Scanner};
+    use loxy_lib::{
+        interpreter::{ast::expression::Expression, parser::value::Value},
+        Interpreter, Parser, Scanner,
+    };
+
+    use crate::interpreter;
 
     fn test_io(input: &str, output: &str) {
         let mut scanner = Scanner::default();
@@ -282,7 +287,7 @@ if ((a or false) and 2 / 2 == 1)
     }
 
     #[test]
-    fn loop_while_simple() {
+    fn while_simple() {
         let input = r#"
 var a = 1;
 while (a < 4) {
@@ -291,6 +296,30 @@ while (a < 4) {
 }
 print a;
 "#;
-         test_io(input, "1\n2\n3\n4");
+        test_io(input, "1\n2\n3\n4");
+    }
+
+    #[test]
+    fn for_simple() {
+        let input = r#"
+for (var a = 1; a < 5; a = a + 1) {
+  print a;
+}
+"#;
+        test_io(input, "1\n2\n3\n4");
+    }
+
+    #[test]
+    fn for_fibonacci() {
+        let input = r#"
+var a = 0;
+var temp;
+for (var b = 1; a < 150; b = temp + b) {
+  print a;
+  temp = a;
+  a = b;
+}
+"#;
+        test_io(input, "0\n1\n1\n2\n3\n5\n8\n13\n21\n34\n55\n89\n144");
     }
 }

@@ -15,7 +15,7 @@ pub enum ValueError {
     ConflictingSubexpression,
     InvalidConversion,
     InvalidAsignTo,
-    InvalidIdentifier,
+    InvalidIdentifier { id: String },
 }
 
 impl Value {

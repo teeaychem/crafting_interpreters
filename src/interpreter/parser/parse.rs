@@ -84,11 +84,11 @@ impl Parser {
 
             match self.expression()? {
                 Expression::Assignment { id, e: assignment } => {
-                    stmt = Statement::declaration(*id, Some(*assignment));
+                    stmt = Statement::mk_declaration(*id, Some(*assignment));
                 }
 
                 Expression::Identifier { id } => {
-                    stmt = Statement::declaration(Expression::identifier(id), None);
+                    stmt = Statement::mk_declaration(Expression::mk_identifier(id), None);
                 }
 
                 _ => return Err(ParseError::ExpectedAssignment),
@@ -115,7 +115,7 @@ impl Parser {
             Print => {
                 self.consume_unchecked();
                 let expr = self.expression()?;
-                stmt = Statement::print(expr);
+                stmt = Statement::mk_print(expr);
                 self.close_statement()?;
             }
 
@@ -153,7 +153,7 @@ impl Parser {
                     }
                 }
 
-                stmt = Statement::conditional(expr, case_if, case_else);
+                stmt = Statement::mk_conditional(expr, case_if, case_else);
 
                 self.close_statement();
             }
@@ -166,20 +166,94 @@ impl Parser {
 
                 let body = self.statement()?;
 
-                stmt = Statement::loop_while(condition, body);
+                stmt = Statement::mk_while(condition, body);
             }
 
+            For => {
+                // Desugar the for to a while loop.
+                // A little more specifically, to a block containig:
+                // - The initialiser if present
+                // - A while statement with the condition if present or a default `true` expression
+                // - With the body of the while extended with the increment statement if present.
+
+                self.consume_checked(&For);
+
+                let mut loop_block = Vec::default();
+
+                self.consume_checked(&ParenLeft);
+
+                let initialiser = self.declaration()?;
+                match initialiser {
+                    Statement::Declaration { .. } => loop_block.push(initialiser),
+
+                    Statement::Empty => {}
+
+                    _ => return Err(ParseError::ForInitialiser),
+                }
+
+                let condition = match self.expression_delimited(TokenKind::Semicolon)? {
+                    Expression::Empty => Expression::mk_true(),
+                    e => e,
+                };
+                self.consume_checked(&Semicolon);
+
+                let increment = self.expression_delimited(TokenKind::ParenRight)?;
+                self.consume_checked(&ParenRight);
+
+                let mut loop_statements = match self.statement()? {
+                    Statement::Block { statements } => statements,
+
+                    statement => vec![statement],
+                };
+
+                match increment {
+                    Expression::Empty => {}
+
+                    _ => loop_statements.push(Statement::mk_expression(increment)),
+                }
+
+                loop_block.push(Statement::mk_while(
+                    condition,
+                    Statement::Block {
+                        statements: loop_statements,
+                    },
+                ));
+
+                stmt = Statement::mk_block(loop_block);
+            }
+
+            Semicolon => stmt = Statement::Empty,
+
             _ => match self.expression() {
-                Err(_) => todo!("Statment todo"),
+                Err(_) => todo!("Statment {:?}", self.token()),
 
                 Ok(e) => {
-                    stmt = Statement::expression(e);
+                    stmt = Statement::mk_expression(e);
                     self.close_statement()?;
                 }
             },
         }
 
         Ok(stmt)
+    }
+
+    /// Returns an Expression on a successful parse, or an Expression::Empty on an unsuccesful parse due to an unexpected token of kind `delimiter`.
+    pub fn expression_delimited(&mut self, delimiter: TokenKind) -> Result<Expression, ParseError> {
+        match self.expression() {
+            Ok(e) => Ok(e),
+
+            Err(e) => match &e {
+                ParseError::UnexpectedToken {
+                    token: Token { kind, .. },
+                } => match kind {
+                    exception => Ok(Expression::Empty),
+
+                    _ => return Err(e),
+                },
+
+                _ => return Err(e),
+            },
+        }
     }
 
     pub fn expression(&mut self) -> Result<Expression, ParseError> {
@@ -189,12 +263,12 @@ impl Parser {
     fn assignment(&mut self) -> Result<Expression, ParseError> {
         if let Some(TokenKind::Identifier { id }) = self.token_kind() {
             if let Some(TokenKind::Equal) = self.token_kind_ahead(1) {
-                let id = Expression::identifier(id.to_owned());
+                let id = Expression::mk_identifier(id.to_owned());
 
                 self.consume_unchecked();
                 self.consume_checked(&TokenKind::Equal);
                 let assignment = self.assignment()?;
-                let expr = Expression::assignment(id, assignment);
+                let expr = Expression::mk_assignment(id, assignment);
 
                 return Ok(expr);
             }
@@ -209,7 +283,7 @@ impl Parser {
         while let Some(TokenKind::Or) = self.token_kind() {
             self.consume_unchecked();
             let right = self.logic_and()?;
-            expr = Expression::or(expr, right);
+            expr = Expression::mk_or(expr, right);
         }
 
         Ok(expr)
@@ -221,7 +295,7 @@ impl Parser {
         while let Some(TokenKind::And) = self.token_kind() {
             self.consume_unchecked();
             let right = self.equality()?;
-            expr = Expression::and(expr, right);
+            expr = Expression::mk_and(expr, right);
         }
 
         Ok(expr)
@@ -235,13 +309,13 @@ impl Parser {
                 TokenKind::EqualEqual => {
                     self.consume_unchecked();
                     let right = self.comparison()?;
-                    expr = Expression::binary(OpB::Eq, expr, right)
+                    expr = Expression::mk_binary(OpB::Eq, expr, right)
                 }
 
                 TokenKind::BangEqual => {
                     self.consume_unchecked();
                     let right = self.comparison()?;
-                    expr = Expression::binary(OpB::Neq, expr, right);
+                    expr = Expression::mk_binary(OpB::Neq, expr, right);
                 }
 
                 _ => break,
@@ -258,22 +332,22 @@ impl Parser {
             match &token.kind {
                 TokenKind::Greater => {
                     self.consume_unchecked();
-                    expr = Expression::binary(OpB::Gt, expr, self.comparison()?)
+                    expr = Expression::mk_binary(OpB::Gt, expr, self.comparison()?)
                 }
 
                 TokenKind::GreaterEqual => {
                     self.consume_unchecked();
-                    expr = Expression::binary(OpB::Geq, expr, self.comparison()?)
+                    expr = Expression::mk_binary(OpB::Geq, expr, self.comparison()?)
                 }
 
                 TokenKind::Less => {
                     self.consume_unchecked();
-                    expr = Expression::binary(OpB::Lt, expr, self.comparison()?)
+                    expr = Expression::mk_binary(OpB::Lt, expr, self.comparison()?)
                 }
 
                 TokenKind::LessEqual => {
                     self.consume_unchecked();
-                    expr = Expression::binary(OpB::Leq, expr, self.comparison()?)
+                    expr = Expression::mk_binary(OpB::Leq, expr, self.comparison()?)
                 }
 
                 _ => break 'comparison_match,
@@ -290,12 +364,12 @@ impl Parser {
             match &token.kind {
                 TokenKind::Minus => {
                     self.consume_unchecked();
-                    expr = Expression::binary(OpB::Minus, expr, self.term()?)
+                    expr = Expression::mk_binary(OpB::Minus, expr, self.term()?)
                 }
 
                 TokenKind::Plus => {
                     self.consume_unchecked();
-                    expr = Expression::binary(OpB::Plus, expr, self.term()?)
+                    expr = Expression::mk_binary(OpB::Plus, expr, self.term()?)
                 }
 
                 _ => break,
@@ -311,12 +385,12 @@ impl Parser {
             match &token.kind {
                 TokenKind::Slash => {
                     self.consume_unchecked();
-                    expr = Expression::binary(OpB::Slash, expr, self.factor()?)
+                    expr = Expression::mk_binary(OpB::Slash, expr, self.factor()?)
                 }
 
                 TokenKind::Star => {
                     self.consume_unchecked();
-                    expr = Expression::binary(OpB::Star, expr, self.factor()?)
+                    expr = Expression::mk_binary(OpB::Star, expr, self.factor()?)
                 }
 
                 _ => break,
@@ -334,11 +408,11 @@ impl Parser {
                 let expr = match &token.kind {
                     TokenKind::Bang => {
                         self.consume_unchecked();
-                        Expression::unary(OpU::Bang, self.unary()?)
+                        Expression::mk_unary(OpU::Bang, self.unary()?)
                     }
                     TokenKind::Minus => {
                         self.consume_unchecked();
-                        Expression::unary(OpU::Minus, self.unary()?)
+                        Expression::mk_unary(OpU::Minus, self.unary()?)
                     }
 
                     _ => self.primary()?,
@@ -356,17 +430,17 @@ impl Parser {
 
             Some(token) => {
                 let expr = match &token.kind {
-                    Number { literal } => Expression::literal(Literal::from(*literal)),
+                    Number { literal } => Expression::mk_literal(Literal::from(*literal)),
 
-                    String { literal } => Expression::literal(Literal::from(literal.to_owned())),
+                    String { literal } => Expression::mk_literal(Literal::from(literal.to_owned())),
 
-                    True => Expression::literal(Literal::True),
+                    True => Expression::mk_literal(Literal::True),
 
-                    False => Expression::literal(Literal::False),
+                    False => Expression::mk_literal(Literal::False),
 
-                    Nil => Expression::literal(Literal::Nil),
+                    Nil => Expression::mk_literal(Literal::Nil),
 
-                    Identifier { id } => Expression::identifier(id.to_owned()),
+                    Identifier { id } => Expression::mk_identifier(id.to_owned()),
 
                     ParenLeft => {
                         self.consume_unchecked();
@@ -377,7 +451,9 @@ impl Parser {
                     }
 
                     _ => {
-                        return Err(ParseError::UnexpectedToken);
+                        return Err(ParseError::UnexpectedToken {
+                            token: token.clone(),
+                        });
                     }
                 };
 
