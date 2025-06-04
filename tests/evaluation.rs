@@ -9,7 +9,7 @@ mod evaluation {
         let mut interpreter = Interpreter::new();
         let number = Expression::from(64.0);
 
-        let number_negation = Expression::unary(OpU::Minus, number);
+        let number_negation = Expression::mk_unary(OpU::Minus, number);
 
         assert_eq!(
             interpreter.evaluate(&number_negation),
@@ -18,7 +18,7 @@ mod evaluation {
 
         let string = Expression::from("64");
 
-        let string_negation = Expression::unary(OpU::Minus, string);
+        let string_negation = Expression::mk_unary(OpU::Minus, string);
 
         assert_eq!(
             interpreter.evaluate(&string_negation),
@@ -36,7 +36,7 @@ mod evaluation {
         let a = Expression::from(a_value);
         let b = Expression::from(b_value);
 
-        let addition = Expression::binary(OpB::Star, a, b);
+        let addition = Expression::mk_binary(OpB::Star, a, b);
 
         assert_eq!(
             interpreter.evaluate(&addition),
@@ -51,7 +51,7 @@ mod evaluation {
         let a = Expression::from("a ");
         let b = Expression::from("string");
 
-        let addition = Expression::binary(OpB::Plus, a, b);
+        let addition = Expression::mk_binary(OpB::Plus, a, b);
 
         assert_eq!(interpreter.evaluate(&addition), Ok(Value::from("a string")));
     }
@@ -63,12 +63,12 @@ mod evaluation {
         let a_value = 64.0;
         let b_value = 32.0;
 
-        let gt = Expression::binary(
+        let gt = Expression::mk_binary(
             OpB::Gt,
             Expression::from(a_value),
             Expression::from(b_value),
         );
-        let leq = Expression::binary(
+        let leq = Expression::mk_binary(
             OpB::Leq,
             Expression::from(a_value),
             Expression::from(b_value),
@@ -85,26 +85,26 @@ mod evaluation {
         let a_value = 64.0;
         let b_value = 32.0;
 
-        let eq_self = Expression::binary(
+        let eq_self = Expression::mk_binary(
             OpB::Eq,
             Expression::from(a_value),
             Expression::from(a_value),
         );
 
-        let eq_same = Expression::binary(
+        let eq_same = Expression::mk_binary(
             OpB::Eq,
             Expression::from(Expression::from("a")),
             Expression::from(Expression::from("a")),
         );
 
-        let neq = Expression::binary(
+        let neq = Expression::mk_binary(
             OpB::Eq,
             Expression::from(a_value),
             Expression::from(b_value),
         );
 
         let neq_different_types =
-            Expression::binary(OpB::Eq, Expression::from("64.0"), Expression::from(64.0));
+            Expression::mk_binary(OpB::Eq, Expression::from("64.0"), Expression::from(64.0));
 
         assert_eq!(interpreter.evaluate(&eq_self), Ok(Value::from(true)));
         assert_eq!(interpreter.evaluate(&eq_same), Ok(Value::from(true)));

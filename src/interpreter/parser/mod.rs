@@ -13,12 +13,13 @@ pub mod value;
 #[derive(Debug)]
 pub enum ParseError {
     MismatchedParentheses,
-    UnexpectedToken,
+    UnexpectedToken { token: Token },
     MissingToken,
     OpenStatement,
     InvalidAsignee,
     ExpectedAssignment,
     TokensExhausted,
+    ForInitialiser
 }
 
 #[derive(Debug)]
