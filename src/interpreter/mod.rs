@@ -57,14 +57,16 @@ impl Interpreter<'_> {
 
                 let assignment = self.evaluate(e)?;
 
-                self.env.insert(id, &assignment);
+                self.env.insert(id, assignment);
             }
 
-            Statement::BlockEnter => {
+            Statement::Block { statements } => {
                 self.env.narrow();
-            }
 
-            Statement::BlockExit => {
+                for statement in statements {
+                    self.interpret(statement);
+                }
+
                 self.env.relax();
             }
 
@@ -77,6 +79,12 @@ impl Interpreter<'_> {
                     self.interpret(yes);
                 } else if let Some(no) = no {
                     self.interpret(no);
+                }
+            }
+
+            Statement::While { condition, body } => {
+                while self.evaluate(condition)?.is_truthy() {
+                    self.interpret(body);
                 }
             }
 

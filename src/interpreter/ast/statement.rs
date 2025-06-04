@@ -30,9 +30,14 @@ pub enum Statement {
         case_else: Option<Box<Statement>>,
     },
 
-    BlockEnter,
+    While {
+        condition: Expression,
+        body: Box<Statement>,
+    },
 
-    BlockExit,
+    Block {
+        statements: Vec<Statement>,
+    },
 }
 
 impl Statement {
@@ -71,6 +76,13 @@ impl Statement {
                 Some(case) => Some(Box::new(case)),
                 None => None,
             },
+        }
+    }
+
+    pub fn loop_while(condition: Expression, body: Statement) -> Self {
+        Statement::While {
+            condition,
+            body: Box::new(body),
         }
     }
 }

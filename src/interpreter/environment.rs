@@ -1,9 +1,10 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, mem::swap};
 
 use crate::interpreter::parser::value::Value;
 
 pub type Assignments = HashMap<String, Value>;
 
+#[derive(Debug)]
 pub struct Env {
     stack: Vec<Assignments>,
 }
@@ -34,8 +35,23 @@ impl Env {
         }
     }
 
-    pub fn insert(&mut self, id: String, v: &Value) -> Option<Value> {
-        self.current_mut().insert(id, v.to_owned())
+    pub fn insert(&mut self, id: String, v: Value) -> Option<Value> {
+        self.current_mut().insert(id, v)
+    }
+
+    pub fn assign(&mut self, id: &String, mut v: Value) -> Option<Value> {
+        for assignment in self.stack.iter_mut().rev() {
+            match assignment.get_mut(id) {
+                Some(expr) => {
+                    swap(expr, &mut v);
+                    return Some(v);
+                }
+
+                None => continue,
+            }
+        }
+
+        None
     }
 
     pub fn get(&self, id: &String) -> Option<&Value> {
