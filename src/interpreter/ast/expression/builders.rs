@@ -52,6 +52,13 @@ impl Expression {
     pub fn mk_false() -> Self {
         Expression::Literal { l: Literal::True }
     }
+
+    pub fn mk_call(callee: Expression, args: Vec<Expression>) -> Self {
+        Expression::Call {
+            callee: Box::new(callee),
+            args,
+        }
+    }
 }
 
 impl From<Literal> for Expression {

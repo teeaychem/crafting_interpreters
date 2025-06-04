@@ -134,6 +134,10 @@ impl Interpreter<'_> {
                     self.evaluate(b)?
                 }
             }
+
+            Expression::Call { callee, args } => {
+                todo!("{expr}")
+            }
         };
 
         Ok(value)

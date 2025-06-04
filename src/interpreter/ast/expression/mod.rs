@@ -46,23 +46,46 @@ pub enum Expression {
     Grouping {
         e: Box<Expression>,
     },
+
+    Call {
+        callee: Box<Expression>,
+        args: Vec<Expression>,
+    },
 }
 
 impl std::fmt::Display for Expression {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Empty => write!(f, "<Empty>"),
+
             Self::Literal { l } => write!(f, "{l}"),
+
             Self::Identifier { id: l } => write!(f, "{l}"),
+
             Expression::Assignment {
                 id: name,
                 e: assignment,
             } => write!(f, "{name} = {assignment}"),
+
             Self::Grouping { e } => write!(f, "(group {e})"),
+
             Self::Unary { op, e } => write!(f, "({op} {e})"),
+
             Self::Binary { op, a, b } => write!(f, "({op} {a} {b})"),
+
             Self::Or { a, b } => write!(f, "(OR {a} {b})"),
+
             Self::And { a, b } => write!(f, "(AND {a} {b})"),
+
+            Self::Call { callee, args } => write!(
+                f,
+                "{}({})",
+                callee,
+                args.iter()
+                    .map(|a| a.to_string())
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            ),
         }
     }
 }

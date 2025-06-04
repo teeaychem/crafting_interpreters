@@ -6,62 +6,6 @@ use crate::interpreter::{ast::statement::Statement, scanner::token::TokenKind};
 use super::{ParseError, Parser};
 
 impl Parser {
-    pub fn token(&self) -> Option<&Token> {
-        self.tokens.get(self.index)
-    }
-
-    pub fn token_kind(&self) -> Option<&TokenKind> {
-        match self.tokens.get(self.index) {
-            Some(token) => Some(&token.kind),
-            None => None,
-        }
-    }
-
-    pub fn token_ahead(&self, ahead: usize) -> Option<&Token> {
-        self.tokens.get(self.index + ahead)
-    }
-
-    pub fn token_kind_ahead(&self, ahead: usize) -> Option<&TokenKind> {
-        match self.tokens.get(self.index + ahead) {
-            Some(token) => Some(&token.kind),
-            None => None,
-        }
-    }
-
-    fn consume_unchecked(&mut self) {
-        self.index += 1
-    }
-
-    fn check_token(&mut self, check: &TokenKind) -> Result<(), ParseError> {
-        match self.token() {
-            Some(t) if t.kind == *check => Ok(()),
-
-            _ => {
-                println!("Failed to find token {check:?}");
-                Err(ParseError::MissingToken)
-            }
-        }
-    }
-
-    fn consume_checked(&mut self, check: &TokenKind) -> Result<(), ParseError> {
-        self.check_token(check)?;
-        self.index += 1;
-        Ok(())
-    }
-
-    fn close_statement(&mut self) -> Result<(), ParseError> {
-        match self.token() {
-            Some(token) if token.kind == TokenKind::Semicolon => {
-                self.index += 1;
-                Ok(())
-            }
-
-            _ => Err(ParseError::OpenStatement),
-        }
-    }
-}
-
-impl Parser {
     pub fn parse(&mut self) -> Result<(), ParseError> {
         loop {
             match self.declaration() {
@@ -225,10 +169,10 @@ impl Parser {
             Semicolon => stmt = Statement::Empty,
 
             _ => match self.expression() {
-                Err(_) => todo!("Statment {:?}", self.token()),
+                Err(_) => todo!("Statement {:?}", self.token()),
 
-                Ok(e) => {
-                    stmt = Statement::mk_expression(e);
+                Ok(expr) => {
+                    stmt = Statement::mk_expression(expr);
                     self.close_statement()?;
                 }
             },
@@ -421,8 +365,39 @@ impl Parser {
         }
     }
 
+    #[allow(clippy::while_let_loop)]
     fn call(&mut self) -> Result<Expression, ParseError> {
-        self.primary()
+        let mut expr = self.primary()?;
+
+        loop {
+            match self.token_kind() {
+                Some(TokenKind::ParenLeft) => {
+                    self.consume_checked(&TokenKind::ParenLeft);
+                    let mut args = Vec::default();
+                    while self
+                        .token_kind()
+                        .is_some_and(|kind| *kind != TokenKind::ParenRight)
+                    {
+                        args.push(self.expression()?);
+                        if 255 <= args.len() {
+                            return Err(ParseError::CallArgLimit);
+                        }
+
+                        if let Some(TokenKind::Comma) = self.token_kind() {
+                            self.consume_checked(&TokenKind::Comma);
+                        }
+                    }
+
+                    self.consume_checked(&TokenKind::ParenRight);
+
+                    expr = Expression::mk_call(expr, args);
+                }
+
+                _ => break,
+            }
+        }
+
+        Ok(expr)
     }
 
     fn primary(&mut self) -> Result<Expression, ParseError> {
@@ -463,26 +438,5 @@ impl Parser {
                 Ok(expr)
             }
         }
-    }
-}
-
-impl Parser {
-    pub fn syncronise(&mut self) -> bool {
-        println!("syncronising parser");
-        while let Some(token) = self.token() {
-            match &token.kind {
-                TokenKind::Semicolon => {
-                    self.consume_unchecked();
-                    return true;
-                }
-
-                _ => {
-                    self.consume_unchecked();
-                    continue;
-                }
-            }
-        }
-
-        false
     }
 }

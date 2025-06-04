@@ -47,7 +47,7 @@ mod parser {
         let expr = parser.expression();
 
         match expr {
-            Ok(expr) => panic!("Expected parse error"),
+            Ok(_) => panic!("Expected parse error"),
 
             Err(_) => loop {
                 match parser.expression() {

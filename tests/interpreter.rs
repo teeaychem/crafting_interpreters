@@ -2,12 +2,7 @@
 mod interpreter {
     use std::io::BufWriter;
 
-    use loxy_lib::{
-        Interpreter, Parser, Scanner,
-        interpreter::{ast::expression::Expression, parser::value::Value},
-    };
-
-    use crate::interpreter;
+    use loxy_lib::{Interpreter, Parser, Scanner};
 
     fn test_io(input: &str, output: &str) {
         let mut scanner = Scanner::default();
@@ -45,6 +40,7 @@ mod interpreter {
         assert_eq!(buffer_string.expect("Failed to interpret").trim(), output);
     }
 
+    #[allow(dead_code)]
     fn interpret_stdout(input: &str) {
         let mut scanner = Scanner::default();
         let mut parser = Parser::default();
@@ -321,5 +317,29 @@ for (var b = 1; a < 150; b = temp + b) {
 }
 "#;
         test_io(input, "0\n1\n1\n2\n3\n5\n8\n13\n21\n34\n55\n89\n144");
+    }
+
+    #[test]
+    fn basic_call() {
+        let input = r#"
+add(1, 2);
+"#;
+        test_io(input, "");
+    }
+
+    #[test]
+    fn basic_call_call() {
+        let input = r#"
+add(1, 2)(3);
+"#;
+        test_io(input, "");
+    }
+
+    #[test]
+    fn empty_call() {
+        let input = r#"
+empty_call();
+"#;
+        test_io(input, "");
     }
 }
