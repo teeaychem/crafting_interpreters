@@ -1,16 +1,16 @@
 use crate::interpreter::location::Location;
 
-pub type Tokens = Vec<Token>;
+pub type Tkns = Vec<Tkn>;
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct Token {
-    pub kind: TokenKind,
+pub struct Tkn {
+    pub kind: TknKind,
     pub location: Location,
 }
 
 #[allow(non_camel_case_types)]
 #[derive(Clone, Debug, PartialEq)]
-pub enum TokenKind {
+pub enum TknKind {
     // Single character
     BraceLeft,
     BraceRight,
@@ -61,30 +61,30 @@ pub enum TokenKind {
     EOF,
 }
 
-impl Token {
-    pub fn new(instance: TokenKind, location: Location) -> Self {
-        Token {
+impl Tkn {
+    pub fn new(instance: TknKind, location: Location) -> Self {
+        Tkn {
             kind: instance,
             location,
         }
     }
 
-    pub fn is(&self, instance: TokenKind) -> bool {
+    pub fn is(&self, instance: TknKind) -> bool {
         self.kind == instance
     }
 }
 
-impl std::fmt::Display for Token {
+impl std::fmt::Display for Tkn {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.kind {
-            TokenKind::Number { literal } => write!(f, "Number: {literal}"),
-            TokenKind::String { literal } => write!(f, "String: {literal}",),
+            TknKind::Number { literal } => write!(f, "Number: {literal}"),
+            TknKind::String { literal } => write!(f, "String: {literal}",),
             _ => write!(f, "Non-literal: {:?}", self.kind),
         }
     }
 }
 
-pub enum TokenError {
+pub enum TknErr {
     TrailingDot,
     MultilineString,
     Unrecognised { character: char },

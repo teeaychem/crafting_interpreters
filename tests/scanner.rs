@@ -4,7 +4,7 @@ mod scanner {
         Scanner,
         interpreter::{
             location::Location,
-            scanner::token::{Token, TokenKind},
+            scanner::token::{Tkn, TknKind},
         },
     };
 
@@ -16,16 +16,16 @@ mod scanner {
         assert_eq!(
             scanner.tokens,
             vec![
-                Token {
-                    kind: TokenKind::Number { literal: 1.0 },
+                Tkn {
+                    kind: TknKind::Number { literal: 1.0 },
                     location: Location::default()
                 },
-                Token {
-                    kind: TokenKind::Number { literal: 0.23 },
+                Tkn {
+                    kind: TknKind::Number { literal: 0.23 },
                     location: Location::new(0, 2)
                 },
-                Token {
-                    kind: TokenKind::Number { literal: 1.23 },
+                Tkn {
+                    kind: TknKind::Number { literal: 1.23 },
                     location: Location::new(1, 2)
                 }
             ]
@@ -42,36 +42,36 @@ mod scanner {
         assert_eq!(
             scanner.tokens,
             vec![
-                Token {
-                    kind: TokenKind::Identifier {
+                Tkn {
+                    kind: TknKind::Identifier {
                         id: "not".to_string()
                     },
                     location: Location::default()
                 },
-                Token {
-                    kind: TokenKind::ParenLeft,
+                Tkn {
+                    kind: TknKind::ParenLeft,
                     location: Location::new(0, 4)
                 },
-                Token {
-                    kind: TokenKind::True,
+                Tkn {
+                    kind: TknKind::True,
                     location: Location::new(0, 5)
                 },
-                Token {
-                    kind: TokenKind::And,
+                Tkn {
+                    kind: TknKind::And,
                     location: Location::new(0, 10)
                 },
-                Token {
-                    kind: TokenKind::Identifier {
+                Tkn {
+                    kind: TknKind::Identifier {
                         id: "perhaps".to_string()
                     },
                     location: Location::new(0, 14)
                 },
-                Token {
-                    kind: TokenKind::False,
+                Tkn {
+                    kind: TknKind::False,
                     location: Location::new(0, 22)
                 },
-                Token {
-                    kind: TokenKind::ParenRight,
+                Tkn {
+                    kind: TknKind::ParenRight,
                     location: Location::new(0, 27)
                 }
             ]
