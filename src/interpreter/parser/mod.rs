@@ -2,7 +2,7 @@ use crate::interpreter::{
     ast::statement::{Statement, Statements},
     scanner::{
         self, Scanner,
-        token::{self, Token, TokenKind, Tokens},
+        token::{self, Tkn, TknKind, Tkns},
     },
 };
 
@@ -19,12 +19,12 @@ pub enum ParseError {
     MissingToken,
     OpenStatement,
     TokensExhausted,
-    UnexpectedToken { token: Token },
+    UnexpectedToken { token: Tkn },
 }
 
 #[derive(Debug)]
 pub struct Parser {
-    tokens: Tokens,
+    tokens: Tkns,
     statements: Statements,
     index: usize,
 }
@@ -42,7 +42,7 @@ impl From<Scanner> for Parser {
 impl Default for Parser {
     fn default() -> Self {
         Parser {
-            tokens: Tokens::default(),
+            tokens: Tkns::default(),
             statements: Statements::default(),
             index: 0,
         }
@@ -64,22 +64,22 @@ impl Parser {
 }
 
 impl Parser {
-    pub fn token(&self) -> Option<&Token> {
+    pub fn token(&self) -> Option<&Tkn> {
         self.tokens.get(self.index)
     }
 
-    pub fn token_kind(&self) -> Option<&TokenKind> {
+    pub fn token_kind(&self) -> Option<&TknKind> {
         match self.tokens.get(self.index) {
             Some(token) => Some(&token.kind),
             None => None,
         }
     }
 
-    pub fn token_ahead(&self, ahead: usize) -> Option<&Token> {
+    pub fn token_ahead(&self, ahead: usize) -> Option<&Tkn> {
         self.tokens.get(self.index + ahead)
     }
 
-    pub fn token_kind_ahead(&self, ahead: usize) -> Option<&TokenKind> {
+    pub fn token_kind_ahead(&self, ahead: usize) -> Option<&TknKind> {
         match self.tokens.get(self.index + ahead) {
             Some(token) => Some(&token.kind),
             None => None,
@@ -90,7 +90,7 @@ impl Parser {
         self.index += 1
     }
 
-    fn check_token(&mut self, check: &TokenKind) -> Result<(), ParseError> {
+    fn check_token(&mut self, check: &TknKind) -> Result<(), ParseError> {
         match self.token() {
             Some(t) if t.kind == *check => Ok(()),
 
@@ -101,7 +101,7 @@ impl Parser {
         }
     }
 
-    fn consume_checked(&mut self, check: &TokenKind) -> Result<(), ParseError> {
+    fn consume_checked(&mut self, check: &TknKind) -> Result<(), ParseError> {
         self.check_token(check)?;
         self.index += 1;
         Ok(())
@@ -109,7 +109,7 @@ impl Parser {
 
     fn close_statement(&mut self) -> Result<(), ParseError> {
         match self.token() {
-            Some(token) if token.kind == TokenKind::Semicolon => {
+            Some(token) if token.kind == TknKind::Semicolon => {
                 self.index += 1;
                 Ok(())
             }
@@ -124,7 +124,7 @@ impl Parser {
         println!("syncronising parser");
         while let Some(token) = self.token() {
             match &token.kind {
-                TokenKind::Semicolon => {
+                TknKind::Semicolon => {
                     self.consume_unchecked();
                     return true;
                 }

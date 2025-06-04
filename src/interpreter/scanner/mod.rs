@@ -2,14 +2,14 @@ use std::{iter::Peekable, str::Chars};
 
 use crate::interpreter::{
     location::Location,
-    scanner::token::{Token, TokenError, TokenKind, Tokens},
+    scanner::token::{Tkn, TknErr, TknKind, Tkns},
 };
 
 pub mod token;
 
 pub struct Scanner {
     pub location: Location,
-    pub tokens: Tokens,
+    pub tokens: Tkns,
 }
 
 impl Default for Scanner {
@@ -40,7 +40,7 @@ impl Scanner {
         }
     }
 
-    fn take_string(&mut self, chars: &mut Peekable<Chars<'_>>) -> Result<(), TokenError> {
+    fn take_string(&mut self, chars: &mut Peekable<Chars<'_>>) -> Result<(), TknErr> {
         chars.next();
         let mut literal = String::default();
 
@@ -50,7 +50,7 @@ impl Scanner {
                     let length = literal.len() + 2;
 
                     self.note_token(
-                        TokenKind::String {
+                        TknKind::String {
                             literal: std::mem::take(&mut literal),
                         },
                         length,
@@ -59,7 +59,7 @@ impl Scanner {
                     break;
                 }
 
-                '\n' => return Err(TokenError::MultilineString),
+                '\n' => return Err(TknErr::MultilineString),
 
                 _ => {
                     literal.push(*d);
@@ -79,7 +79,7 @@ impl Scanner {
         self.location.newline();
     }
 
-    fn take_numeric(&mut self, chars: &mut Peekable<Chars<'_>>) -> Result<(), TokenError> {
+    fn take_numeric(&mut self, chars: &mut Peekable<Chars<'_>>) -> Result<(), TknErr> {
         let mut number = String::default();
 
         while let Some(m) = chars.peek() {
@@ -92,11 +92,11 @@ impl Scanner {
         }
 
         if let Some('.') = number.chars().last() {
-            return Err(TokenError::TrailingDot);
+            return Err(TknErr::TrailingDot);
         }
 
         self.note_token(
-            TokenKind::Number {
+            TknKind::Number {
                 literal: number.parse().unwrap(),
             },
             number.len(),
@@ -105,7 +105,7 @@ impl Scanner {
         Ok(())
     }
 
-    fn take_alphabetic(&mut self, chars: &mut Peekable<Chars<'_>>) -> Result<(), TokenError> {
+    fn take_alphabetic(&mut self, chars: &mut Peekable<Chars<'_>>) -> Result<(), TknErr> {
         let mut alphabetic = String::default();
         while let Some(b) = chars.peek() {
             if b.is_alphabetic() || *b == '_' {
@@ -117,39 +117,39 @@ impl Scanner {
         }
 
         let instance = match alphabetic.as_str() {
-            "and" => TokenKind::And,
+            "and" => TknKind::And,
 
-            "class" => TokenKind::Class,
+            "class" => TknKind::Class,
 
-            "else" => TokenKind::Else,
+            "else" => TknKind::Else,
 
-            "false" => TokenKind::False,
+            "false" => TknKind::False,
 
-            "for" => TokenKind::For,
+            "for" => TknKind::For,
 
-            "fun" => TokenKind::Fun,
+            "fun" => TknKind::Fun,
 
-            "if" => TokenKind::If,
+            "if" => TknKind::If,
 
-            "nil" => TokenKind::Nil,
+            "nil" => TknKind::Nil,
 
-            "or" => TokenKind::Or,
+            "or" => TknKind::Or,
 
-            "print" => TokenKind::Print,
+            "print" => TknKind::Print,
 
-            "return" => TokenKind::Return,
+            "return" => TknKind::Return,
 
-            "super" => TokenKind::Super,
+            "super" => TknKind::Super,
 
-            "this" => TokenKind::This,
+            "this" => TknKind::This,
 
-            "true" => TokenKind::True,
+            "true" => TknKind::True,
 
-            "var" => TokenKind::Var,
+            "var" => TknKind::Var,
 
-            "while" => TokenKind::While,
+            "while" => TknKind::While,
 
-            non_keyword => TokenKind::Identifier {
+            non_keyword => TknKind::Identifier {
                 id: non_keyword.to_owned(),
             },
         };
@@ -163,8 +163,8 @@ impl Scanner {
         &mut self,
         chars: &mut Peekable<Chars<'_>>,
         count: usize,
-        instance: TokenKind,
-    ) -> Result<(), TokenError> {
+        instance: TknKind,
+    ) -> Result<(), TknErr> {
         self.note_token(instance, count);
         for _ in 0..count {
             chars.next();
@@ -182,15 +182,15 @@ impl Scanner {
 
     fn scan_punctuation() {}
 
-    fn note_token(&mut self, instance: TokenKind, advance: usize) {
-        self.tokens.push(Token {
+    fn note_token(&mut self, instance: TknKind, advance: usize) {
+        self.tokens.push(Tkn {
             kind: instance,
             location: self.location,
         });
         self.location.advance_col(advance);
     }
 
-    pub fn take_token(&mut self, chars: &mut Peekable<Chars<'_>>) -> Result<bool, TokenError> {
+    pub fn take_token(&mut self, chars: &mut Peekable<Chars<'_>>) -> Result<bool, TknErr> {
         self.take_whitespace(chars);
 
         match chars.peek() {
@@ -205,63 +205,63 @@ impl Scanner {
                         if let Some('/') = chars.peek() {
                             self.take_comment(chars);
                         } else {
-                            self.note_token(TokenKind::Slash, 1);
+                            self.note_token(TknKind::Slash, 1);
                         }
                     }
 
-                    '(' => self.take_characters(chars, 1, TokenKind::ParenLeft)?,
+                    '(' => self.take_characters(chars, 1, TknKind::ParenLeft)?,
 
-                    ')' => self.take_characters(chars, 1, TokenKind::ParenRight)?,
+                    ')' => self.take_characters(chars, 1, TknKind::ParenRight)?,
 
-                    '{' => self.take_characters(chars, 1, TokenKind::BraceLeft)?,
+                    '{' => self.take_characters(chars, 1, TknKind::BraceLeft)?,
 
-                    '}' => self.take_characters(chars, 1, TokenKind::BraceRight)?,
+                    '}' => self.take_characters(chars, 1, TknKind::BraceRight)?,
 
-                    ',' => self.take_characters(chars, 1, TokenKind::Comma)?,
+                    ',' => self.take_characters(chars, 1, TknKind::Comma)?,
 
-                    '.' => self.take_characters(chars, 1, TokenKind::Dot)?,
+                    '.' => self.take_characters(chars, 1, TknKind::Dot)?,
 
-                    '-' => self.take_characters(chars, 1, TokenKind::Minus)?,
+                    '-' => self.take_characters(chars, 1, TknKind::Minus)?,
 
-                    '+' => self.take_characters(chars, 1, TokenKind::Plus)?,
+                    '+' => self.take_characters(chars, 1, TknKind::Plus)?,
 
-                    ';' => self.take_characters(chars, 1, TokenKind::Semicolon)?,
+                    ';' => self.take_characters(chars, 1, TknKind::Semicolon)?,
 
-                    '*' => self.take_characters(chars, 1, TokenKind::Star)?,
+                    '*' => self.take_characters(chars, 1, TknKind::Star)?,
 
                     '!' => {
                         chars.next();
                         if let Some('=') = chars.peek() {
-                            self.take_characters(chars, 1, TokenKind::BangEqual)?
+                            self.take_characters(chars, 1, TknKind::BangEqual)?
                         } else {
-                            self.take_characters(chars, 0, TokenKind::Bang)?
+                            self.take_characters(chars, 0, TknKind::Bang)?
                         }
                     }
 
                     '=' => {
                         chars.next();
                         if let Some('=') = chars.peek() {
-                            self.take_characters(chars, 1, TokenKind::EqualEqual)?
+                            self.take_characters(chars, 1, TknKind::EqualEqual)?
                         } else {
-                            self.take_characters(chars, 0, TokenKind::Equal)?
+                            self.take_characters(chars, 0, TknKind::Equal)?
                         }
                     }
 
                     '<' => {
                         chars.next();
                         if let Some('=') = chars.peek() {
-                            self.take_characters(chars, 1, TokenKind::LessEqual)?
+                            self.take_characters(chars, 1, TknKind::LessEqual)?
                         } else {
-                            self.take_characters(chars, 0, TokenKind::Less)?
+                            self.take_characters(chars, 0, TknKind::Less)?
                         }
                     }
 
                     '>' => {
                         chars.next();
                         if let Some('=') = chars.peek() {
-                            self.take_characters(chars, 1, TokenKind::GreaterEqual)?
+                            self.take_characters(chars, 1, TknKind::GreaterEqual)?
                         } else {
-                            self.take_characters(chars, 0, TokenKind::Greater)?
+                            self.take_characters(chars, 0, TknKind::Greater)?
                         }
                     }
 
@@ -270,7 +270,7 @@ impl Scanner {
                     alphabetic if alphabetic.is_alphabetic() => self.take_alphabetic(chars)?,
 
                     unrecognised => {
-                        return Err(TokenError::Unrecognised {
+                        return Err(TknErr::Unrecognised {
                             character: *unrecognised,
                         });
                     }
