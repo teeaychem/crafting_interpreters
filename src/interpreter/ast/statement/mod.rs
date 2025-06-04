@@ -78,10 +78,7 @@ impl Statement {
         Statement::Conditional {
             condition,
             case_if: Box::new(case_if),
-            case_else: match case_else {
-                Some(case) => Some(Box::new(case)),
-                None => None,
-            },
+            case_else: case_else.map(Box::new),
         }
     }
 

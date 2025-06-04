@@ -3,7 +3,7 @@ use core::panic;
 use super::{Expression, Interpreter};
 use crate::interpreter::{
     ast::{
-        expression::{OpB, OpU},
+        expression::{OpOne, OpTwo},
         literal::{self, Literal},
     },
     parser::value::{Value, ValueError},
@@ -51,8 +51,8 @@ impl Interpreter<'_> {
             Expression::Identifier { id } => match self.env.get(id) {
                 None => {
                     println!("{:?}", self.env);
-                    return Err(ValueError::InvalidIdentifier { id: id.to_owned() })
-                },
+                    return Err(ValueError::InvalidIdentifier { id: id.to_owned() });
+                }
 
                 Some(e) => return Ok(e.to_owned()),
             },
@@ -73,7 +73,7 @@ impl Interpreter<'_> {
             Expression::Grouping { e } => self.evaluate(e)?,
 
             Expression::Unary { op, e } => {
-                use OpU::*;
+                use OpOne::*;
                 match op {
                     Minus => Value::from(-self.evaluate_numeric(e)?),
 
@@ -81,8 +81,8 @@ impl Interpreter<'_> {
                 }
             }
 
-            Expression::Binary { op, l, r } => {
-                use OpB::*;
+            Expression::Binary { op, a: l, b: r } => {
+                use OpTwo::*;
                 match op {
                     Minus => Value::from(self.evaluate_numeric(l)? - self.evaluate_numeric(r)?),
 

@@ -1,9 +1,8 @@
 use crate::interpreter::{
     ast::statement::{Statement, Statements},
     scanner::{
-        self,
+        self, Scanner,
         token::{self, Token, TokenKind, Tokens},
-        Scanner,
     },
 };
 
@@ -19,7 +18,7 @@ pub enum ParseError {
     InvalidAsignee,
     ExpectedAssignment,
     TokensExhausted,
-    ForInitialiser
+    ForInitialiser,
 }
 
 #[derive(Debug)]
@@ -62,4 +61,3 @@ impl Parser {
         self.statements.push(statement);
     }
 }
-
