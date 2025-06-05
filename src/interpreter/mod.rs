@@ -7,7 +7,7 @@ pub mod location;
 pub mod parser;
 pub mod scanner;
 
-use environment::Env;
+use environment::{Env, EnvHandle};
 
 use crate::interpreter::{
     ast::{
@@ -33,7 +33,7 @@ impl Interpreter {
     pub fn interpret<W: Write>(
         &self,
         statement: &Statement,
-        env: &mut Env,
+        env: &EnvHandle,
         out: &mut W,
     ) -> Result<(), ValueError> {
         match statement {
@@ -54,17 +54,15 @@ impl Interpreter {
 
                 let assignment = self.evaluate(e, env)?;
 
-                env.insert(id, assignment);
+                env.borrow_mut().insert(id, assignment);
             }
 
             Statement::Block { statements } => {
-                env.narrow();
+                let mut nenv = Env::narrow(env.clone());
 
                 for statement in statements {
-                    self.interpret(statement, env, out);
+                    self.interpret(statement, &nenv, out);
                 }
-
-                env.relax();
             }
 
             Statement::Conditional {
@@ -94,7 +92,7 @@ impl Interpreter {
     pub fn interpret_all<W: Write>(
         &self,
         statements: &Statements,
-        env: &mut Env,
+        env: &EnvHandle,
         out: &mut W,
     ) -> Result<(), ValueError> {
         for statement in statements {

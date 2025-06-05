@@ -1,3 +1,5 @@
+use std::cell::{RefCell, RefMut};
+use std::rc::Rc;
 use std::{collections::HashMap, mem::swap};
 
 use crate::interpreter::parser::value::Value;
@@ -15,35 +17,46 @@ pub struct Function {
     task: Statements,
 }
 
+pub type EnvHandle = Rc<RefCell<Env>>;
+
 #[derive(Debug)]
 pub struct Env {
-    stack: Vec<Assignments>,
+    assignments: Assignments,
+    depth: usize,
+    enclosing: Option<EnvHandle>,
 }
 
 impl Default for Env {
     fn default() -> Self {
         Env {
-            stack: vec![Assignments::default()],
+            assignments: Assignments::default(),
+            depth: 0,
+            enclosing: None,
         }
     }
 }
 
 impl Env {
+    pub fn fresh_global_handle() -> EnvHandle {
+        Rc::new(RefCell::new(Env::default()))
+    }
+
+    pub fn narrow(handle: EnvHandle) -> EnvHandle {
+        let depth = handle.borrow().depth + 1;
+
+        let narrow_env = Env {
+            assignments: Assignments::default(),
+            depth,
+            enclosing: Some(handle),
+        };
+
+        Rc::new(RefCell::new(narrow_env))
+    }
+}
+
+impl Env {
     pub fn current_mut(&mut self) -> &mut Assignments {
-        // # Safety: A global assignemt is always on the stack
-        unsafe { self.stack.last_mut().unwrap_unchecked() }
-    }
-
-    pub fn narrow(&mut self) {
-        self.stack.push(Assignments::default());
-    }
-
-    pub fn relax(&mut self) {
-        if 1 < self.stack.len() {
-            self.stack.pop();
-        } else {
-            panic!("! Attempt to relax global assignments")
-        }
+        &mut self.assignments
     }
 
     pub fn insert(&mut self, id: String, v: Value) -> Option<Value> {
@@ -51,29 +64,29 @@ impl Env {
     }
 
     pub fn assign(&mut self, id: &String, mut v: Value) -> Option<Value> {
-        for assignment in self.stack.iter_mut().rev() {
-            match assignment.get_mut(id) {
-                Some(expr) => {
-                    swap(expr, &mut v);
-                    return Some(v);
-                }
-
-                None => continue,
+        match self.assignments.get_mut(id) {
+            Some(expr) => {
+                swap(expr, &mut v);
+                Some(v)
             }
-        }
 
-        None
+            None => match &self.enclosing {
+                Some(e) => e.borrow_mut().assign(id, v),
+
+                None => None,
+            },
+        }
     }
 
-    pub fn get(&self, id: &String) -> Option<&Value> {
-        for assignment in self.stack.iter().rev() {
-            match assignment.get(id) {
-                Some(expr) => return Some(expr),
+    pub fn get(&self, id: &String) -> Option<Value> {
+        match self.assignments.get(id) {
+            Some(v) => Some(v.clone()),
 
-                None => continue,
-            }
+            None => match &self.enclosing {
+                Some(e) => e.borrow().get(id),
+
+                None => None,
+            },
         }
-
-        None
     }
 }

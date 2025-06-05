@@ -12,14 +12,14 @@ mod evaluation {
     #[test]
     fn basic_negation() {
         let interpreter = Interpreter::default();
-        let mut env = Env::default();
+        let mut env = Env::fresh_global_handle();
 
         let number = Expression::from(64.0);
 
         let number_negation = Expression::mk_unary(OpOne::Minus, number);
 
         assert_eq!(
-            interpreter.evaluate(&number_negation, &mut env),
+            interpreter.evaluate(&number_negation, &env),
             Ok(Value::from(-64.0))
         );
 
@@ -28,7 +28,7 @@ mod evaluation {
         let string_negation = Expression::mk_unary(OpOne::Minus, string);
 
         assert_eq!(
-            interpreter.evaluate(&string_negation, &mut env),
+            interpreter.evaluate(&string_negation, &env),
             Ok(Value::from(-64.0))
         );
     }
@@ -36,7 +36,7 @@ mod evaluation {
     #[test]
     fn basic_arithmetic() {
         let interpreter = Interpreter::default();
-        let mut env = Env::default();
+        let env = Env::fresh_global_handle();
 
         let a_value = 64.0;
         let b_value = 32.0;
@@ -47,7 +47,7 @@ mod evaluation {
         let addition = Expression::mk_binary(OpTwo::Star, a, b);
 
         assert_eq!(
-            interpreter.evaluate(&addition, &mut env),
+            interpreter.evaluate(&addition, &env),
             Ok(Value::from(a_value * b_value))
         );
     }
@@ -55,7 +55,7 @@ mod evaluation {
     #[test]
     fn basic_string() {
         let interpreter = Interpreter::default();
-        let mut env = Env::default();
+        let env = Env::fresh_global_handle();
 
         let a = Expression::from("a ");
         let b = Expression::from("string");
@@ -63,7 +63,7 @@ mod evaluation {
         let addition = Expression::mk_binary(OpTwo::Plus, a, b);
 
         assert_eq!(
-            interpreter.evaluate(&addition, &mut env),
+            interpreter.evaluate(&addition, &env),
             Ok(Value::from("a string"))
         );
     }
@@ -71,7 +71,7 @@ mod evaluation {
     #[test]
     fn basic_comparison() {
         let interpreter = Interpreter::default();
-        let mut env = Env::default();
+        let env = Env::fresh_global_handle();
 
         let a_value = 64.0;
         let b_value = 32.0;
@@ -87,14 +87,14 @@ mod evaluation {
             Expression::from(b_value),
         );
 
-        assert_eq!(interpreter.evaluate(&gt, &mut env), Ok(Value::from(true)));
-        assert_eq!(interpreter.evaluate(&leq, &mut env), Ok(Value::from(false)));
+        assert_eq!(interpreter.evaluate(&gt, &env), Ok(Value::from(true)));
+        assert_eq!(interpreter.evaluate(&leq, &env), Ok(Value::from(false)));
     }
 
     #[test]
     fn basic_equality() {
         let interpreter = Interpreter::default();
-        let mut env = Env::default();
+        let env = Env::fresh_global_handle();
 
         let a_value = 64.0;
         let b_value = 32.0;
@@ -120,17 +120,11 @@ mod evaluation {
         let neq_different_types =
             Expression::mk_binary(OpTwo::Eq, Expression::from("64.0"), Expression::from(64.0));
 
+        assert_eq!(interpreter.evaluate(&eq_self, &env), Ok(Value::from(true)));
+        assert_eq!(interpreter.evaluate(&eq_same, &env), Ok(Value::from(true)));
+        assert_eq!(interpreter.evaluate(&neq, &env), Ok(Value::from(false)));
         assert_eq!(
-            interpreter.evaluate(&eq_self, &mut env),
-            Ok(Value::from(true))
-        );
-        assert_eq!(
-            interpreter.evaluate(&eq_same, &mut env),
-            Ok(Value::from(true))
-        );
-        assert_eq!(interpreter.evaluate(&neq, &mut env), Ok(Value::from(false)));
-        assert_eq!(
-            interpreter.evaluate(&neq_different_types, &mut env),
+            interpreter.evaluate(&neq_different_types, &env),
             Ok(Value::from(false))
         );
     }
