@@ -2,6 +2,8 @@ mod conversion;
 
 use std::borrow::Borrow;
 
+use crate::interpreter::environment::EnvErr;
+
 #[derive(Clone, Debug, PartialEq)]
 pub enum Value {
     Numeric { n: f64 },
@@ -19,6 +21,7 @@ pub enum ValueError {
     InvalidConversion,
     InvalidAsignTo,
     InvalidIdentifier { id: String },
+    EnvErr { err: EnvErr },
 }
 
 impl Value {

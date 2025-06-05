@@ -12,7 +12,7 @@ mod evaluation {
     #[test]
     fn basic_negation() {
         let interpreter = Interpreter::default();
-        let mut env = Env::fresh_global_handle();
+        let env = Env::fresh_global_handle();
 
         let number = Expression::from(64.0);
 

@@ -25,9 +25,9 @@ mod interpreter {
 
         {
             let interpreter = Interpreter::default();
-            let mut env = Env::fresh_global_handle();
+            let env = Env::fresh_global_handle();
 
-            match interpreter.interpret_all(parser.statements(), &mut env, &mut stream) {
+            match interpreter.interpret_all(parser.statements(), &env, &mut stream) {
                 Ok(_) => {}
 
                 Err(e) => panic!("Interpretation error: {e:?}"),
@@ -57,9 +57,9 @@ mod interpreter {
         };
 
         let interpreter = Interpreter::default();
-        let mut env = Env::fresh_global_handle();
+        let env = Env::fresh_global_handle();
 
-        match interpreter.interpret_all(parser.statements(), &mut env, &mut std::io::stdout()) {
+        match interpreter.interpret_all(parser.statements(), &env, &mut std::io::stdout()) {
             Ok(_) => {}
 
             Err(e) => panic!("Interpretation error: {e:?}"),
