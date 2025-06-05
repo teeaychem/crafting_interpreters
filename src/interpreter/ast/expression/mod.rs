@@ -3,7 +3,7 @@ mod operators;
 
 pub use operators::{OpOne, OpTwo};
 
-use super::literal::Literal;
+use super::{identifier::Identifier, literal::Literal};
 
 #[derive(Debug, Clone)]
 pub enum Expression {
@@ -14,7 +14,7 @@ pub enum Expression {
     },
 
     Identifier {
-        id: String,
+        id: Identifier,
     },
 
     Assignment {

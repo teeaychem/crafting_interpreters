@@ -21,53 +21,50 @@ use crate::interpreter::{
 pub mod environment;
 pub mod evaluate;
 
-pub struct Interpreter<'i> {
-    out: Box<dyn Write + 'i>,
-    env: Env,
-}
+pub struct Interpreter {}
 
-impl<'i> Interpreter<'i> {
-    pub fn set_destination<T: Write + 'i>(&mut self, d: T) {
-        self.out = Box::new(d)
+impl Default for Interpreter {
+    fn default() -> Self {
+        Interpreter {}
     }
 }
 
-impl Interpreter<'_> {
-    pub fn new() -> Self {
-        Interpreter {
-            out: Box::new(std::io::stdout()),
-            env: Env::default(),
-        }
-    }
-
-    pub fn interpret(&mut self, statement: &Statement) -> Result<(), ValueError> {
+impl Interpreter {
+    pub fn interpret<W: Write>(
+        &self,
+        statement: &Statement,
+        env: &mut Env,
+        out: &mut W,
+    ) -> Result<(), ValueError> {
         match statement {
             Statement::Expression { e } => {
-                self.evaluate(e)?;
+                self.evaluate(e, env)?;
             }
 
             Statement::Print { e } => {
-                let evaluation = self.evaluate(e)?;
+                let evaluation = self.evaluate(e, env)?;
 
-                self.out.write(format!("{evaluation}\n").as_bytes());
+                unsafe {
+                    out.write(format!("{evaluation}\n").as_bytes());
+                }
             }
 
             Statement::Declaration { id, e } => {
                 let id = self.get_identifier(id)?;
 
-                let assignment = self.evaluate(e)?;
+                let assignment = self.evaluate(e, env)?;
 
-                self.env.insert(id, assignment);
+                env.insert(id, assignment);
             }
 
             Statement::Block { statements } => {
-                self.env.narrow();
+                env.narrow();
 
                 for statement in statements {
-                    self.interpret(statement);
+                    self.interpret(statement, env, out);
                 }
 
-                self.env.relax();
+                env.relax();
             }
 
             Statement::Conditional {
@@ -75,16 +72,16 @@ impl Interpreter<'_> {
                 case_if: yes,
                 case_else: no,
             } => {
-                if self.evaluate(condition)?.is_truthy() {
-                    self.interpret(yes);
+                if self.evaluate(condition, env)?.is_truthy() {
+                    self.interpret(yes, env, out);
                 } else if let Some(no) = no {
-                    self.interpret(no);
+                    self.interpret(no, env, out);
                 }
             }
 
             Statement::While { condition, body } => {
-                while self.evaluate(condition)?.is_truthy() {
-                    self.interpret(body);
+                while self.evaluate(condition, env)?.is_truthy() {
+                    self.interpret(body, env, out);
                 }
             }
 
@@ -94,9 +91,14 @@ impl Interpreter<'_> {
         Ok(())
     }
 
-    pub fn interpret_all(&mut self, statements: &Statements) -> Result<(), ValueError> {
+    pub fn interpret_all<W: Write>(
+        &self,
+        statements: &Statements,
+        env: &mut Env,
+        out: &mut W,
+    ) -> Result<(), ValueError> {
         for statement in statements {
-            self.interpret(statement)?;
+            self.interpret(statement, env, out)?;
         }
 
         Ok(())

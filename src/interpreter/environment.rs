@@ -2,7 +2,18 @@ use std::{collections::HashMap, mem::swap};
 
 use crate::interpreter::parser::value::Value;
 
-pub type Assignments = HashMap<String, Value>;
+use super::ast::{
+    expression::Expression, identifier::Identifier, literal::Literal, statement::Statements,
+};
+
+pub type Assignments = HashMap<Identifier, Value>;
+
+pub struct Function {
+    name: String,
+    arity: usize,
+    args: Vec<Identifier>,
+    task: Statements,
+}
 
 #[derive(Debug)]
 pub struct Env {

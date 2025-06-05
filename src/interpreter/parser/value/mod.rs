@@ -5,8 +5,11 @@ use std::borrow::Borrow;
 #[derive(Clone, Debug, PartialEq)]
 pub enum Value {
     Numeric { n: f64 },
+
     String { s: String },
+
     Boolean { b: bool },
+
     Nil,
 }
 
