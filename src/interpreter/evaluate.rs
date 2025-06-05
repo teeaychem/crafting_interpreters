@@ -1,4 +1,8 @@
-use super::{Expression, Interpreter, ast::identifier::Identifier, environment::Env};
+use super::{
+    Expression, Interpreter,
+    ast::identifier::Identifier,
+    environment::{Env, EnvHandle},
+};
 use crate::interpreter::{
     ast::{
         expression::{OpOne, OpTwo},
@@ -8,7 +12,7 @@ use crate::interpreter::{
 };
 
 impl Interpreter {
-    pub fn eval_boolean(&self, expr: &Expression, env: &mut Env) -> Result<bool, ValueError> {
+    pub fn eval_boolean(&self, expr: &Expression, env: &EnvHandle) -> Result<bool, ValueError> {
         match self.evaluate(expr, env)?.to_boolean() {
             Ok(Value::Boolean { b }) => Ok(b),
 
@@ -16,7 +20,7 @@ impl Interpreter {
         }
     }
 
-    pub fn eval_numeric(&self, expr: &Expression, env: &mut Env) -> Result<f64, ValueError> {
+    pub fn eval_numeric(&self, expr: &Expression, env: &EnvHandle) -> Result<f64, ValueError> {
         match self.evaluate(expr, env)?.to_numeric() {
             Ok(Value::Numeric { n }) => Ok(n),
 
@@ -24,7 +28,7 @@ impl Interpreter {
         }
     }
 
-    pub fn eval_string(&self, expr: &Expression, env: &mut Env) -> Result<String, ValueError> {
+    pub fn eval_string(&self, expr: &Expression, env: &EnvHandle) -> Result<String, ValueError> {
         match self.evaluate(expr, env)?.to_string() {
             Ok(Value::String { s }) => Ok(s.to_owned()),
 
@@ -40,13 +44,13 @@ impl Interpreter {
         }
     }
 
-    pub fn evaluate(&self, expr: &Expression, env: &mut Env) -> Result<Value, ValueError> {
+    pub fn evaluate(&self, expr: &Expression, env: &EnvHandle) -> Result<Value, ValueError> {
         let value = match expr {
             Expression::Empty => Value::Nil,
 
             Expression::Literal { l } => Value::from(l.to_owned()),
 
-            Expression::Identifier { id } => match env.get(id) {
+            Expression::Identifier { id } => match env.borrow().get(id) {
                 None => {
                     println!("{:?}", env);
                     return Err(ValueError::InvalidIdentifier { id: id.to_owned() });
@@ -63,7 +67,7 @@ impl Interpreter {
 
                 let name = self.get_identifier(name)?;
 
-                env.assign(&name, assignment.clone());
+                env.borrow_mut().assign(&name, assignment.clone());
 
                 assignment
             }
