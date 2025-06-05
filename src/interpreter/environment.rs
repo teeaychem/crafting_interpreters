@@ -26,6 +26,11 @@ pub struct Env {
     enclosing: Option<EnvHandle>,
 }
 
+#[derive(Debug, PartialEq)]
+pub enum EnvErr {
+    MissingAsignee,
+}
+
 impl Default for Env {
     fn default() -> Self {
         Env {
@@ -55,25 +60,21 @@ impl Env {
 }
 
 impl Env {
-    pub fn current_mut(&mut self) -> &mut Assignments {
-        &mut self.assignments
-    }
-
     pub fn insert(&mut self, id: String, v: Value) -> Option<Value> {
-        self.current_mut().insert(id, v)
+        self.assignments.insert(id, v)
     }
 
-    pub fn assign(&mut self, id: &String, mut v: Value) -> Option<Value> {
+    pub fn assign(&mut self, id: &String, mut v: Value) -> Result<Value, EnvErr> {
         match self.assignments.get_mut(id) {
             Some(expr) => {
                 swap(expr, &mut v);
-                Some(v)
+                Ok(v)
             }
 
             None => match &self.enclosing {
                 Some(e) => e.borrow_mut().assign(id, v),
 
-                None => None,
+                None => Err(EnvErr::MissingAsignee),
             },
         }
     }

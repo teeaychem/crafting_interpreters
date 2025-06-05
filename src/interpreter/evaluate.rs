@@ -67,7 +67,11 @@ impl Interpreter {
 
                 let name = self.get_identifier(name)?;
 
-                env.borrow_mut().assign(&name, assignment.clone());
+                match env.borrow_mut().assign(&name, assignment.clone()) {
+                    Ok(_) => {}
+
+                    Err(e) => return Err(ValueError::EnvErr { err: e }),
+                };
 
                 assignment
             }
