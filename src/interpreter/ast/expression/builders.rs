@@ -1,85 +1,82 @@
-use crate::interpreter::ast::{
-    expression::{Expression, OpOne, OpTwo},
-    literal::Literal,
-};
+use crate::interpreter::ast::expression::{Expr, OpOne, OpTwo};
 
-use super::Basic;
+use super::ExprB;
 
-impl Expression {
-    pub fn mk_assignment(id: Expression, to: Expression) -> Self {
-        Expression::Assignment {
+impl Expr {
+    pub fn mk_assignment(id: Expr, to: Expr) -> Self {
+        Expr::Assignment {
             id: Box::new(id),
             e: Box::new(to),
         }
     }
 
-    pub fn mk_binary(op: OpTwo, a: Expression, b: Expression) -> Self {
-        Expression::Binary {
+    pub fn mk_binary(op: OpTwo, a: Expr, b: Expr) -> Self {
+        Expr::Binary {
             op,
             a: Box::new(a),
             b: Box::new(b),
         }
     }
 
-    pub fn mk_unary(op: OpOne, a: Expression) -> Self {
-        Expression::Unary { op, e: Box::new(a) }
+    pub fn mk_unary(op: OpOne, a: Expr) -> Self {
+        Expr::Unary { op, e: Box::new(a) }
     }
 
     pub fn mk_numeric(n: f64) -> Self {
-        Expression::Basic(Basic::Number { n })
+        Expr::Basic(ExprB::Numeric { n })
     }
 
     pub fn mk_string(s: String) -> Self {
-        Expression::Basic(Basic::String { s })
+        Expr::Basic(ExprB::String { s })
     }
 
     pub fn mk_identifier(id: String) -> Self {
-        Expression::Identifier { id }
+        Expr::Identifier { id }
     }
 
-    pub fn mk_or(a: Expression, b: Expression) -> Self {
-        Expression::Or {
+    pub fn mk_or(a: Expr, b: Expr) -> Self {
+        Expr::Or {
             a: Box::new(a),
             b: Box::new(b),
         }
     }
 
-    pub fn mk_and(a: Expression, b: Expression) -> Self {
-        Expression::And {
+    pub fn mk_and(a: Expr, b: Expr) -> Self {
+        Expr::And {
             a: Box::new(a),
             b: Box::new(b),
         }
     }
 
     pub fn mk_true() -> Self {
-        Expression::Basic(Basic::True)
+        Expr::Basic(ExprB::mk_bool(true))
     }
 
     pub fn mk_false() -> Self {
-        Expression::Basic(Basic::False)
+        Expr::Basic(ExprB::mk_bool(false))
     }
 
     pub fn mk_nil() -> Self {
-        Expression::Basic(Basic::Nil)
+        Expr::Basic(ExprB::Nil)
     }
 
-    pub fn mk_call(callee: Expression, args: Vec<Expression>) -> Self {
-        Expression::Call {
+    pub fn mk_call(callee: Expr, args: Vec<Expr>) -> Self {
+        Expr::Call {
             callee: Box::new(callee),
             args,
         }
     }
 }
 
-impl From<f64> for Expression {
+impl From<f64> for Expr {
     fn from(value: f64) -> Self {
-        Expression::Basic(Basic::Number { n: value })
+        Expr::Basic(ExprB::Numeric { n: value })
     }
 }
 
-impl From<&str> for Expression {
+impl From<&str> for Expr {
     fn from(value: &str) -> Self {
-        Expression::Basic(Basic::String {
+        Expr::Basic(ExprB::String {
             s: value.to_owned(),
         })
     }

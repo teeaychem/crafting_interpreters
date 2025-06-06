@@ -1,6 +1,6 @@
 use crate::interpreter::{
     Statement,
-    ast::{expression::Expression, identifier::Identifier},
+    ast::{expression::Expr, identifier::Identifier},
 };
 
 use super::Statements;
@@ -10,31 +10,28 @@ impl Statement {
         Self::Block { statements }
     }
 
-    pub fn mk_expression(e: Expression) -> Self {
+    pub fn mk_expression(e: Expr) -> Self {
         Self::Expression { e }
     }
 
-    pub fn mk_print(e: Expression) -> Self {
+    pub fn mk_print(e: Expr) -> Self {
         Self::Print { e }
     }
 
-    pub fn mk_declaration(id: Expression, e: Option<Expression>) -> Self {
+    pub fn mk_declaration(id: Expr, e: Option<Expr>) -> Self {
         match e {
             Some(expr) => Statement::Declaration { id, e: expr },
 
-            None => Statement::Declaration {
-                id,
-                e: Expression::Empty,
-            },
+            None => Statement::Declaration { id, e: Expr::Empty },
         }
     }
 
-    pub fn mk_assignment(id: Expression, e: Expression) -> Self {
+    pub fn mk_assignment(id: Expr, e: Expr) -> Self {
         Statement::Assignment { id, e }
     }
 
     pub fn mk_conditional(
-        condition: Expression,
+        condition: Expr,
         case_if: Statement,
         case_else: Option<Statement>,
     ) -> Self {
@@ -45,7 +42,7 @@ impl Statement {
         }
     }
 
-    pub fn mk_while(condition: Expression, body: Statement) -> Self {
+    pub fn mk_while(condition: Expr, body: Statement) -> Self {
         Statement::While {
             condition,
             body: Box::new(body),

@@ -1,10 +1,10 @@
-use crate::interpreter::ast::expression::Basic;
+use crate::interpreter::ast::expression::ExprB;
 use crate::interpreter::ast::identifier::Identifier;
-use crate::interpreter::evaluation::value::Assignment;
+
 use crate::{
     Interpreter,
     interpreter::{
-        ast::expression::{Expression, OpOne, OpTwo},
+        ast::expression::{Expr, OpOne, OpTwo},
         environment::EnvHandle,
     },
 };
@@ -12,58 +12,56 @@ use crate::{
 use crate::interpreter::evaluation::value::EvalErr;
 
 impl Interpreter {
-    pub fn eval_boolean(&self, expr: &Expression, env: &EnvHandle) -> Result<bool, EvalErr> {
-        match self.eval(expr, env)?.to_boolean() {
-            Ok(Assignment::Boolean { b }) => Ok(b),
+    pub fn eval_boolean(&self, expr: &Expr, env: &EnvHandle) -> Result<bool, EvalErr> {
+        match self.eval(expr, env)? {
+            ExprB::Boolean { b } => Ok(b),
 
             _ => Err(EvalErr::ConflictingSubexpression),
         }
     }
 
-    pub fn eval_numeric(&self, expr: &Expression, env: &EnvHandle) -> Result<f64, EvalErr> {
-        match self.eval(expr, env)?.to_numeric() {
-            Ok(Assignment::Numeric { n }) => Ok(n),
+    pub fn eval_numeric(&self, expr: &Expr, env: &EnvHandle) -> Result<f64, EvalErr> {
+        match self.eval(expr, env)? {
+            ExprB::Numeric { n } => Ok(n),
+
+            ExprB::String { s } => {
+                if let Ok(result) = s.parse::<f64>() {
+                    Ok(result)
+                } else {
+                    panic!("Failed to convert string to numeric")
+                }
+            }
+
+            e => panic!("{e:?}"),
+        }
+    }
+
+    pub fn eval_string(&self, expr: &Expr, env: &EnvHandle) -> Result<String, EvalErr> {
+        match self.eval(expr, env)? {
+            ExprB::String { s } => Ok(s.to_owned()),
 
             _ => Err(EvalErr::ConflictingSubexpression),
         }
     }
 
-    pub fn eval_string(&self, expr: &Expression, env: &EnvHandle) -> Result<String, EvalErr> {
-        match self.eval(expr, env)?.to_string() {
-            Ok(Assignment::String { s }) => Ok(s.to_owned()),
-
-            _ => Err(EvalErr::ConflictingSubexpression),
-        }
-    }
-
-    pub fn get_identifier(&self, expr: &Expression) -> Result<Identifier, EvalErr> {
+    pub fn get_identifier(&self, expr: &Expr) -> Result<Identifier, EvalErr> {
         match expr {
-            Expression::Identifier { id: i } => Ok(i.to_owned()),
+            Expr::Identifier { id: i } => Ok(i.to_owned()),
 
             _ => Err(EvalErr::InvalidAsignTo),
         }
     }
 
-    pub fn eval(&self, expr: &Expression, env: &EnvHandle) -> Result<Assignment, EvalErr> {
+    pub fn eval(&self, expr: &Expr, env: &EnvHandle) -> Result<ExprB, EvalErr> {
         let value = match expr {
-            Expression::Empty => Assignment::Nil,
+            Expr::Empty => ExprB::Nil,
 
-            Expression::Basic(bexpr) => {
+            Expr::Basic(bexpr) => {
                 //
-                match bexpr {
-                    Basic::Nil => Assignment::Nil,
-
-                    Basic::False => Assignment::Boolean { b: false },
-
-                    Basic::True => Assignment::Boolean { b: true },
-
-                    Basic::Number { n } => Assignment::Numeric { n: *n },
-
-                    Basic::String { s } => Assignment::String { s: s.to_owned() },
-                }
+                bexpr.clone()
             }
 
-            Expression::Identifier { id } => match env.borrow().get(id) {
+            Expr::Identifier { id } => match env.borrow().get(id) {
                 None => {
                     println!("{:?}", env);
                     return Err(EvalErr::InvalidIdentifier { id: id.to_owned() });
@@ -72,7 +70,7 @@ impl Interpreter {
                 Some(e) => return Ok(e.to_owned()),
             },
 
-            Expression::Assignment {
+            Expr::Assignment {
                 id: name,
                 e: assignment,
             } => {
@@ -89,64 +87,60 @@ impl Interpreter {
                 assignment
             }
 
-            Expression::Grouping { e } => self.eval(e, env)?,
+            Expr::Grouping { e } => self.eval(e, env)?,
 
-            Expression::Unary { op, e } => {
+            Expr::Unary { op, e } => {
                 use OpOne::*;
                 match op {
-                    Minus => Assignment::from(-self.eval_numeric(e, env)?),
+                    Minus => ExprB::mk_numeric(-self.eval_numeric(e, env)?),
 
-                    Bang => Assignment::from(!(self.eval_boolean(e, env)?)),
+                    Bang => ExprB::mk_bool(!(self.eval_boolean(e, env)?)),
                 }
             }
 
-            Expression::Binary { op, a: l, b: r } => {
+            Expr::Binary { op, a: l, b: r } => {
                 use OpTwo::*;
                 match op {
                     Minus => {
-                        Assignment::from(self.eval_numeric(l, env)? - self.eval_numeric(r, env)?)
+                        ExprB::mk_numeric(self.eval_numeric(l, env)? - self.eval_numeric(r, env)?)
                     }
 
                     Slash => {
-                        Assignment::from(self.eval_numeric(l, env)? / self.eval_numeric(r, env)?)
+                        ExprB::mk_numeric(self.eval_numeric(l, env)? / self.eval_numeric(r, env)?)
                     }
 
                     Star => {
-                        Assignment::from(self.eval_numeric(l, env)? * self.eval_numeric(r, env)?)
+                        ExprB::mk_numeric(self.eval_numeric(l, env)? * self.eval_numeric(r, env)?)
                     }
 
                     Plus => match (self.eval(l, env)?, self.eval(r, env)?) {
-                        (Assignment::Numeric { n: l }, Assignment::Numeric { n: r }) => {
-                            Assignment::from(l + r)
+                        (ExprB::Numeric { n: l }, ExprB::Numeric { n: r }) => {
+                            ExprB::mk_numeric(l + r)
                         }
 
-                        (Assignment::String { s: mut l }, Assignment::String { s: r }) => {
+                        (ExprB::String { s: mut l }, ExprB::String { s: r }) => {
                             l.push_str(r.as_str());
-                            Assignment::from(l)
+                            ExprB::mk_string(l)
                         }
 
                         _ => return Err(EvalErr::ConflictingSubexpression),
                     },
 
-                    Gt => Assignment::from(self.eval_numeric(l, env)? > self.eval_numeric(r, env)?),
+                    Gt => ExprB::mk_bool(self.eval_numeric(l, env)? > self.eval_numeric(r, env)?),
 
-                    Geq => {
-                        Assignment::from(self.eval_numeric(l, env)? >= self.eval_numeric(r, env)?)
-                    }
+                    Geq => ExprB::mk_bool(self.eval_numeric(l, env)? >= self.eval_numeric(r, env)?),
 
-                    Lt => Assignment::from(self.eval_numeric(l, env)? < self.eval_numeric(r, env)?),
+                    Lt => ExprB::mk_bool(self.eval_numeric(l, env)? < self.eval_numeric(r, env)?),
 
-                    Leq => {
-                        Assignment::from(self.eval_numeric(l, env)? <= self.eval_numeric(r, env)?)
-                    }
+                    Leq => ExprB::mk_bool(self.eval_numeric(l, env)? <= self.eval_numeric(r, env)?),
 
-                    Eq => Assignment::from(self.eval(l, env)? == self.eval(r, env)?),
+                    Eq => ExprB::mk_bool(self.eval(l, env)? == self.eval(r, env)?),
 
-                    Neq => Assignment::from(self.eval(l, env)? != self.eval(r, env)?),
+                    Neq => ExprB::mk_bool(self.eval(l, env)? != self.eval(r, env)?),
                 }
             }
 
-            Expression::Or { a, b } => {
+            Expr::Or { a, b } => {
                 let a_value = self.eval(a, env)?;
 
                 if a_value.is_truthy() {
@@ -156,7 +150,7 @@ impl Interpreter {
                 }
             }
 
-            Expression::And { a, b } => {
+            Expr::And { a, b } => {
                 let a_value = self.eval(a, env)?;
 
                 if a_value.is_falsey() {
@@ -166,7 +160,7 @@ impl Interpreter {
                 }
             }
 
-            Expression::Call { callee, args } => {
+            Expr::Call { callee, args } => {
                 todo!("{expr}")
             }
         };

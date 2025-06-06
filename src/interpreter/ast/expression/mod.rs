@@ -3,93 +3,121 @@ mod operators;
 
 pub use operators::{OpOne, OpTwo};
 
-use super::{identifier::Identifier, literal::Literal};
+use super::identifier::Identifier;
 
-#[derive(Debug, Clone)]
-pub enum Basic {
+#[derive(Debug, Clone, PartialEq)]
+pub enum ExprB {
     Nil,
 
-    False,
+    Boolean { b: bool },
 
-    True,
-
-    Number { n: f64 },
+    Numeric { n: f64 },
 
     String { s: String },
 }
 
-impl std::fmt::Display for Basic {
+impl std::fmt::Display for ExprB {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Nil => write!(f, "<Empty>"),
+            Self::Nil => write!(f, "nil"),
 
-            Self::False => write!(f, "false"),
+            Self::Boolean { b } => write!(f, "{b}"),
 
-            Self::True => write!(f, "true"),
-
-            Self::Number { n } => write!(f, "{n}"),
+            Self::Numeric { n } => write!(f, "{n}"),
 
             Self::String { s } => write!(f, "{s}"),
         }
     }
 }
 
+impl ExprB {
+    pub fn is_truthy(&self) -> bool {
+        match self {
+            Self::Numeric { n } => true,
+
+            Self::String { s } => true,
+
+            Self::Boolean { b } => *b,
+
+            Self::Nil => false,
+        }
+    }
+
+    pub fn is_falsey(&self) -> bool {
+        !self.is_truthy()
+    }
+}
+
+impl ExprB {
+    pub fn mk_bool(b: bool) -> ExprB {
+        Self::Boolean { b }
+    }
+
+    pub fn mk_numeric(n: f64) -> ExprB {
+        Self::Numeric { n }
+    }
+
+    pub fn mk_string(s: String) -> ExprB {
+        Self::String { s }
+    }
+}
+
 #[derive(Debug, Clone)]
-pub enum Expression {
+pub enum Expr {
     Empty,
 
-    Basic(Basic),
+    Basic(ExprB),
 
     Identifier {
         id: Identifier,
     },
 
     Assignment {
-        id: Box<Expression>,
-        e: Box<Expression>,
+        id: Box<Expr>,
+        e: Box<Expr>,
     },
 
     Unary {
         op: OpOne,
-        e: Box<Expression>,
+        e: Box<Expr>,
     },
 
     Binary {
         op: OpTwo,
-        a: Box<Expression>,
-        b: Box<Expression>,
+        a: Box<Expr>,
+        b: Box<Expr>,
     },
 
     Or {
-        a: Box<Expression>,
-        b: Box<Expression>,
+        a: Box<Expr>,
+        b: Box<Expr>,
     },
 
     And {
-        a: Box<Expression>,
-        b: Box<Expression>,
+        a: Box<Expr>,
+        b: Box<Expr>,
     },
 
     Grouping {
-        e: Box<Expression>,
+        e: Box<Expr>,
     },
 
     Call {
-        callee: Box<Expression>,
-        args: Vec<Expression>,
+        callee: Box<Expr>,
+        args: Vec<Expr>,
     },
 }
 
-impl std::fmt::Display for Expression {
+impl std::fmt::Display for Expr {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Empty => write!(f, "<Empty>"),
+            Self::Empty => write!(f, "nil"),
 
             Self::Basic(bexpr) => write!(f, "{bexpr}"),
 
             Self::Identifier { id: l } => write!(f, "{l}"),
 
-            Expression::Assignment {
+            Expr::Assignment {
                 id: name,
                 e: assignment,
             } => write!(f, "{name} = {assignment}"),
@@ -123,16 +151,16 @@ mod test {
 
     #[test]
     fn simple_display() {
-        let ast = Expression::Binary {
+        let ast = Expr::Binary {
             op: OpTwo::Star,
 
-            a: Box::new(Expression::Unary {
+            a: Box::new(Expr::Unary {
                 op: OpOne::Minus,
-                e: Box::new(Expression::Basic(Basic::Number { n: 123_f64 })),
+                e: Box::new(Expr::Basic(ExprB::Numeric { n: 123_f64 })),
             }),
 
-            b: Box::new(Expression::Grouping {
-                e: Box::new(Expression::Basic(Basic::Number { n: 45.67 })),
+            b: Box::new(Expr::Grouping {
+                e: Box::new(Expr::Basic(ExprB::Numeric { n: 45.67 })),
             }),
         };
 

@@ -2,12 +2,10 @@ use std::cell::{RefCell, RefMut};
 use std::rc::Rc;
 use std::{collections::HashMap, mem::swap};
 
-use super::ast::{
-    expression::Expression, identifier::Identifier, literal::Literal, statement::Statements,
-};
-use super::evaluation::value::Assignment;
+use super::ast::expression::ExprB;
+use super::ast::{expression::Expr, identifier::Identifier, statement::Statements};
 
-pub type Assignments = HashMap<Identifier, Assignment>;
+pub type Assignments = HashMap<Identifier, ExprB>;
 
 pub type EnvHandle = Rc<RefCell<Env>>;
 
@@ -52,11 +50,11 @@ impl Env {
 }
 
 impl Env {
-    pub fn insert(&mut self, id: String, v: Assignment) -> Option<Assignment> {
+    pub fn insert(&mut self, id: String, v: ExprB) -> Option<ExprB> {
         self.assignments.insert(id, v)
     }
 
-    pub fn assign(&mut self, id: &String, mut v: Assignment) -> Result<Assignment, EnvErr> {
+    pub fn assign(&mut self, id: &String, mut v: ExprB) -> Result<ExprB, EnvErr> {
         match self.assignments.get_mut(id) {
             Some(expr) => {
                 swap(expr, &mut v);
@@ -71,7 +69,7 @@ impl Env {
         }
     }
 
-    pub fn get(&self, id: &String) -> Option<Assignment> {
+    pub fn get(&self, id: &String) -> Option<ExprB> {
         match self.assignments.get(id) {
             Some(v) => Some(v.clone()),
 
