@@ -1,21 +1,20 @@
-use crate::interpreter::ast::expression::{Expression, OpOne, OpTwo};
+use crate::interpreter::ast::expression::{Expr, OpOne, OpTwo};
 use crate::interpreter::ast::identifier::Identifier;
-use crate::interpreter::ast::literal::Literal;
 use crate::interpreter::scanner::token::{self, Tkn};
 use crate::interpreter::{ast::statement::Statement, scanner::token::TknKind};
 
 use super::{ParseErr, Parser};
 
 impl Parser {
-    pub fn get_identifier(&self, expr: &Expression) -> Result<Identifier, ParseErr> {
+    pub fn get_identifier(&self, expr: &Expr) -> Result<Identifier, ParseErr> {
         match expr {
-            Expression::Identifier { id: i } => Ok(i.to_owned()),
+            Expr::Identifier { id: i } => Ok(i.to_owned()),
 
             _ => Err(ParseErr::Todo),
         }
     }
 
-    pub fn get_identifiers(&self, expr: &Vec<Expression>) -> Result<Vec<Identifier>, ParseErr> {
+    pub fn get_identifiers(&self, expr: &Vec<Expr>) -> Result<Vec<Identifier>, ParseErr> {
         let mut identifiers = Vec::default();
 
         for e in expr {
@@ -46,13 +45,11 @@ impl Parser {
             self.consume_unchecked();
 
             let stmt = match self.expression()? {
-                Expression::Assignment { id, e: assignment } => {
+                Expr::Assignment { id, e: assignment } => {
                     Statement::mk_declaration(*id, Some(*assignment))
                 }
 
-                Expression::Identifier { id } => {
-                    Statement::mk_declaration(Expression::mk_identifier(id), None)
-                }
+                Expr::Identifier { id } => Statement::mk_declaration(Expr::mk_identifier(id), None),
 
                 _ => return Err(ParseErr::ExpectedAssignment),
             };
@@ -154,7 +151,7 @@ impl Parser {
                 }
 
                 let condition = match self.expression_delimited(TknKind::Semicolon)? {
-                    Expression::Empty => Expression::mk_true(),
+                    Expr::Empty => Expr::mk_true(),
                     e => e,
                 };
                 self.consume_checked(&Semicolon);
@@ -169,7 +166,7 @@ impl Parser {
                 };
 
                 match increment {
-                    Expression::Empty => {}
+                    Expr::Empty => {}
 
                     _ => loop_statements.push(Statement::mk_expression(increment)),
                 }
@@ -188,7 +185,7 @@ impl Parser {
                 self.consume_checked(&Fun);
 
                 let (id, params) = match self.expression()? {
-                    Expression::Call { callee, args } => {
+                    Expr::Call { callee, args } => {
                         (self.get_identifier(&callee)?, self.get_identifiers(&args)?)
                     }
 
@@ -224,31 +221,31 @@ impl Parser {
     }
 
     /// Returns an Expression on a successful parse, or an Expression::Empty on an unsuccesful parse due to an unexpected token of kind `delimiter`.
-    pub fn expression_delimited(&mut self, delimiter: TknKind) -> Result<Expression, ParseErr> {
+    pub fn expression_delimited(&mut self, delimiter: TknKind) -> Result<Expr, ParseErr> {
         match self.expression() {
             Ok(e) => Ok(e),
 
             Err(e) => match &e {
-                ParseErr::Unexpected { found: delimiter } => Ok(Expression::Empty),
+                ParseErr::Unexpected { found: delimiter } => Ok(Expr::Empty),
 
                 _ => Err(e),
             },
         }
     }
 
-    pub fn expression(&mut self) -> Result<Expression, ParseErr> {
+    pub fn expression(&mut self) -> Result<Expr, ParseErr> {
         self.assignment()
     }
 
-    fn assignment(&mut self) -> Result<Expression, ParseErr> {
+    fn assignment(&mut self) -> Result<Expr, ParseErr> {
         if let Some(TknKind::Identifier { id }) = self.token_kind() {
             if let Some(TknKind::Equal) = self.token_kind_ahead(1) {
-                let id = Expression::mk_identifier(id.to_owned());
+                let id = Expr::mk_identifier(id.to_owned());
 
                 self.consume_unchecked();
                 self.consume_checked(&TknKind::Equal);
                 let assignment = self.assignment()?;
-                let expr = Expression::mk_assignment(id, assignment);
+                let expr = Expr::mk_assignment(id, assignment);
 
                 return Ok(expr);
             }
@@ -257,31 +254,31 @@ impl Parser {
         self.logic_or()
     }
 
-    fn logic_or(&mut self) -> Result<Expression, ParseErr> {
+    fn logic_or(&mut self) -> Result<Expr, ParseErr> {
         let mut expr = self.logic_and()?;
 
         while let Some(TknKind::Or) = self.token_kind() {
             self.consume_unchecked();
             let right = self.logic_and()?;
-            expr = Expression::mk_or(expr, right);
+            expr = Expr::mk_or(expr, right);
         }
 
         Ok(expr)
     }
 
-    fn logic_and(&mut self) -> Result<Expression, ParseErr> {
+    fn logic_and(&mut self) -> Result<Expr, ParseErr> {
         let mut expr = self.equality()?;
 
         while let Some(TknKind::And) = self.token_kind() {
             self.consume_unchecked();
             let right = self.equality()?;
-            expr = Expression::mk_and(expr, right);
+            expr = Expr::mk_and(expr, right);
         }
 
         Ok(expr)
     }
 
-    fn equality(&mut self) -> Result<Expression, ParseErr> {
+    fn equality(&mut self) -> Result<Expr, ParseErr> {
         let mut expr = self.comparison()?;
 
         while let Some(token) = self.token() {
@@ -289,13 +286,13 @@ impl Parser {
                 TknKind::EqualEqual => {
                     self.consume_unchecked();
                     let right = self.comparison()?;
-                    expr = Expression::mk_binary(OpTwo::Eq, expr, right)
+                    expr = Expr::mk_binary(OpTwo::Eq, expr, right)
                 }
 
                 TknKind::BangEqual => {
                     self.consume_unchecked();
                     let right = self.comparison()?;
-                    expr = Expression::mk_binary(OpTwo::Neq, expr, right);
+                    expr = Expr::mk_binary(OpTwo::Neq, expr, right);
                 }
 
                 _ => break,
@@ -305,29 +302,29 @@ impl Parser {
         Ok(expr)
     }
 
-    fn comparison(&mut self) -> Result<Expression, ParseErr> {
+    fn comparison(&mut self) -> Result<Expr, ParseErr> {
         let mut expr = self.term()?;
 
         'comparison_match: while let Some(token) = self.token() {
             match &token.kind {
                 TknKind::Greater => {
                     self.consume_unchecked();
-                    expr = Expression::mk_binary(OpTwo::Gt, expr, self.comparison()?)
+                    expr = Expr::mk_binary(OpTwo::Gt, expr, self.comparison()?)
                 }
 
                 TknKind::GreaterEqual => {
                     self.consume_unchecked();
-                    expr = Expression::mk_binary(OpTwo::Geq, expr, self.comparison()?)
+                    expr = Expr::mk_binary(OpTwo::Geq, expr, self.comparison()?)
                 }
 
                 TknKind::Less => {
                     self.consume_unchecked();
-                    expr = Expression::mk_binary(OpTwo::Lt, expr, self.comparison()?)
+                    expr = Expr::mk_binary(OpTwo::Lt, expr, self.comparison()?)
                 }
 
                 TknKind::LessEqual => {
                     self.consume_unchecked();
-                    expr = Expression::mk_binary(OpTwo::Leq, expr, self.comparison()?)
+                    expr = Expr::mk_binary(OpTwo::Leq, expr, self.comparison()?)
                 }
 
                 _ => break 'comparison_match,
@@ -337,19 +334,19 @@ impl Parser {
         Ok(expr)
     }
 
-    fn term(&mut self) -> Result<Expression, ParseErr> {
+    fn term(&mut self) -> Result<Expr, ParseErr> {
         let mut expr = self.factor()?;
 
         while let Some(token) = self.token() {
             match &token.kind {
                 TknKind::Minus => {
                     self.consume_unchecked();
-                    expr = Expression::mk_binary(OpTwo::Minus, expr, self.term()?)
+                    expr = Expr::mk_binary(OpTwo::Minus, expr, self.term()?)
                 }
 
                 TknKind::Plus => {
                     self.consume_unchecked();
-                    expr = Expression::mk_binary(OpTwo::Plus, expr, self.term()?)
+                    expr = Expr::mk_binary(OpTwo::Plus, expr, self.term()?)
                 }
 
                 _ => break,
@@ -358,19 +355,19 @@ impl Parser {
         Ok(expr)
     }
 
-    fn factor(&mut self) -> Result<Expression, ParseErr> {
+    fn factor(&mut self) -> Result<Expr, ParseErr> {
         let mut expr = self.unary()?;
 
         while let Some(token) = self.token() {
             match &token.kind {
                 TknKind::Slash => {
                     self.consume_unchecked();
-                    expr = Expression::mk_binary(OpTwo::Slash, expr, self.factor()?)
+                    expr = Expr::mk_binary(OpTwo::Slash, expr, self.factor()?)
                 }
 
                 TknKind::Star => {
                     self.consume_unchecked();
-                    expr = Expression::mk_binary(OpTwo::Star, expr, self.factor()?)
+                    expr = Expr::mk_binary(OpTwo::Star, expr, self.factor()?)
                 }
 
                 _ => break,
@@ -380,7 +377,7 @@ impl Parser {
         Ok(expr)
     }
 
-    fn unary(&mut self) -> Result<Expression, ParseErr> {
+    fn unary(&mut self) -> Result<Expr, ParseErr> {
         match self.token() {
             None => Err(ParseErr::MissingToken),
 
@@ -388,11 +385,11 @@ impl Parser {
                 let expr = match &token.kind {
                     TknKind::Bang => {
                         self.consume_unchecked();
-                        Expression::mk_unary(OpOne::Bang, self.unary()?)
+                        Expr::mk_unary(OpOne::Bang, self.unary()?)
                     }
                     TknKind::Minus => {
                         self.consume_unchecked();
-                        Expression::mk_unary(OpOne::Minus, self.unary()?)
+                        Expr::mk_unary(OpOne::Minus, self.unary()?)
                     }
 
                     _ => self.call()?,
@@ -404,7 +401,7 @@ impl Parser {
     }
 
     #[allow(clippy::while_let_loop)]
-    fn call(&mut self) -> Result<Expression, ParseErr> {
+    fn call(&mut self) -> Result<Expr, ParseErr> {
         let mut expr = self.primary()?;
 
         loop {
@@ -428,7 +425,7 @@ impl Parser {
 
                     self.consume_checked(&TknKind::ParenRight);
 
-                    expr = Expression::mk_call(expr, args);
+                    expr = Expr::mk_call(expr, args);
                 }
 
                 _ => break,
@@ -438,24 +435,24 @@ impl Parser {
         Ok(expr)
     }
 
-    fn primary(&mut self) -> Result<Expression, ParseErr> {
+    fn primary(&mut self) -> Result<Expr, ParseErr> {
         use crate::interpreter::scanner::token::TknKind::*;
         match self.token() {
             None => Err(ParseErr::MissingToken),
 
             Some(token) => {
                 let expr = match &token.kind {
-                    Number { literal } => Expression::mk_numeric(*literal),
+                    Number { literal } => Expr::mk_numeric(*literal),
 
-                    String { literal } => Expression::mk_string(literal.to_owned()),
+                    String { literal } => Expr::mk_string(literal.to_owned()),
 
-                    True => Expression::mk_true(),
+                    True => Expr::mk_true(),
 
-                    False => Expression::mk_false(),
+                    False => Expr::mk_false(),
 
-                    Nil => Expression::mk_nil(),
+                    Nil => Expr::mk_nil(),
 
-                    Identifier { id } => Expression::mk_identifier(id.to_owned()),
+                    Identifier { id } => Expr::mk_identifier(id.to_owned()),
 
                     ParenLeft => {
                         self.consume_unchecked();

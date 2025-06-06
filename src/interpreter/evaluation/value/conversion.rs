@@ -1,46 +1,48 @@
-use super::{Assignment, EvalErr};
+// use crate::interpreter::ast::expression::Basic;
 
-impl Assignment {
-    pub fn to_boolean(self) -> Result<Self, EvalErr> {
-        match self {
-            Assignment::Nil => Ok(Assignment::from(false)),
+// use super::EvalErr;
 
-            Assignment::Boolean { .. } => Ok(self),
+// impl Basic {
+//     pub fn to_boolean(self) -> Result<Self, EvalErr> {
+//         match self {
+//             Basic::Nil => Ok(Basic::from(false)),
 
-            _ => Ok(Assignment::from(true)),
-        }
-    }
+//             Basic::Boolean { .. } => Ok(self),
 
-    pub fn to_numeric(self) -> Result<Self, EvalErr> {
-        match self {
-            Assignment::Nil => Err(EvalErr::InvalidConversion),
+//             _ => Ok(Basic::from(true)),
+//         }
+//     }
 
-            Assignment::Boolean { b } => Err(EvalErr::InvalidConversion),
+//     pub fn to_numeric(self) -> Result<Self, EvalErr> {
+//         match self {
+//             Basic::Nil => Err(EvalErr::InvalidConversion),
 
-            Self::String { s } => match s.parse::<f64>() {
-                Ok(v) => Ok(Assignment::from(v)),
+//             Basic::Boolean { b } => Err(EvalErr::InvalidConversion),
 
-                Err(_) => Err(EvalErr::InvalidConversion),
-            },
+//             Self::String { s } => match s.parse::<f64>() {
+//                 Ok(v) => Ok(Basic::from(v)),
 
-            Self::Numeric { .. } => Ok(self),
-        }
-    }
+//                 Err(_) => Err(EvalErr::InvalidConversion),
+//             },
 
-    pub fn to_string(self) -> Result<Self, EvalErr> {
-        let value = match self {
-            Assignment::Nil => return Err(EvalErr::InvalidConversion),
+//             Self::Numeric { .. } => Ok(self),
+//         }
+//     }
 
-            Assignment::Boolean { b } => match b {
-                true => Assignment::from("true"),
-                false => Assignment::from("false"),
-            },
+//     pub fn to_string(self) -> Result<Self, EvalErr> {
+//         let value = match self {
+//             Basic::Nil => return Err(EvalErr::InvalidConversion),
 
-            Self::String { .. } => self,
+//             Basic::Boolean { b } => match b {
+//                 true => Basic::from("true"),
+//                 false => Basic::from("false"),
+//             },
 
-            Self::Numeric { n } => Assignment::from(n.to_string()),
-        };
+//             Self::String { .. } => self,
 
-        Ok(value)
-    }
-}
+//             Self::Numeric { n } => Basic::from(n.to_string()),
+//         };
+
+//         Ok(value)
+//     }
+// }

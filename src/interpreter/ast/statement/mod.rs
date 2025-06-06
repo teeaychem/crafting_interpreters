@@ -1,6 +1,4 @@
-use crate::interpreter::ast::expression::Expression;
-
-use super::{expression, identifier::Identifier};
+use crate::interpreter::ast::{expression::Expr, identifier::Identifier};
 
 mod builders;
 
@@ -11,31 +9,31 @@ pub enum Statement {
     Empty,
 
     Expression {
-        e: Expression,
+        e: Expr,
     },
 
     Print {
-        e: Expression,
+        e: Expr,
     },
 
     Declaration {
-        id: Expression,
-        e: Expression,
+        id: Expr,
+        e: Expr,
     },
 
     Assignment {
-        id: Expression,
-        e: Expression,
+        id: Expr,
+        e: Expr,
     },
 
     Conditional {
-        condition: Expression,
+        condition: Expr,
         case_if: Box<Statement>,
         case_else: Option<Box<Statement>>,
     },
 
     While {
-        condition: Expression,
+        condition: Expr,
         body: Box<Statement>,
     },
 
