@@ -5,9 +5,9 @@ use std::{collections::HashMap, mem::swap};
 use super::ast::{
     expression::Expression, identifier::Identifier, literal::Literal, statement::Statements,
 };
-use super::evaluation::value::Value;
+use super::evaluation::value::Assignment;
 
-pub type Assignments = HashMap<Identifier, Value>;
+pub type Assignments = HashMap<Identifier, Assignment>;
 
 pub type EnvHandle = Rc<RefCell<Env>>;
 
@@ -52,11 +52,11 @@ impl Env {
 }
 
 impl Env {
-    pub fn insert(&mut self, id: String, v: Value) -> Option<Value> {
+    pub fn insert(&mut self, id: String, v: Assignment) -> Option<Assignment> {
         self.assignments.insert(id, v)
     }
 
-    pub fn assign(&mut self, id: &String, mut v: Value) -> Result<Value, EnvErr> {
+    pub fn assign(&mut self, id: &String, mut v: Assignment) -> Result<Assignment, EnvErr> {
         match self.assignments.get_mut(id) {
             Some(expr) => {
                 swap(expr, &mut v);
@@ -71,7 +71,7 @@ impl Env {
         }
     }
 
-    pub fn get(&self, id: &String) -> Option<Value> {
+    pub fn get(&self, id: &String) -> Option<Assignment> {
         match self.assignments.get(id) {
             Some(v) => Some(v.clone()),
 

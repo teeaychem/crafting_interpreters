@@ -5,7 +5,7 @@ mod evaluation {
         interpreter::{
             ast::expression::{Expression, OpOne, OpTwo},
             environment::Env,
-            evaluation::value::Value,
+            evaluation::value::Assignment,
         },
     };
 
@@ -20,7 +20,7 @@ mod evaluation {
 
         assert_eq!(
             interpreter.eval(&number_negation, &env),
-            Ok(Value::from(-64.0))
+            Ok(Assignment::from(-64.0))
         );
 
         let string = Expression::from("64");
@@ -29,7 +29,7 @@ mod evaluation {
 
         assert_eq!(
             interpreter.eval(&string_negation, &env),
-            Ok(Value::from(-64.0))
+            Ok(Assignment::from(-64.0))
         );
     }
 
@@ -48,7 +48,7 @@ mod evaluation {
 
         assert_eq!(
             interpreter.eval(&addition, &env),
-            Ok(Value::from(a_value * b_value))
+            Ok(Assignment::from(a_value * b_value))
         );
     }
 
@@ -64,7 +64,7 @@ mod evaluation {
 
         assert_eq!(
             interpreter.eval(&addition, &env),
-            Ok(Value::from("a string"))
+            Ok(Assignment::from("a string"))
         );
     }
 
@@ -87,8 +87,8 @@ mod evaluation {
             Expression::from(b_value),
         );
 
-        assert_eq!(interpreter.eval(&gt, &env), Ok(Value::from(true)));
-        assert_eq!(interpreter.eval(&leq, &env), Ok(Value::from(false)));
+        assert_eq!(interpreter.eval(&gt, &env), Ok(Assignment::from(true)));
+        assert_eq!(interpreter.eval(&leq, &env), Ok(Assignment::from(false)));
     }
 
     #[test]
@@ -120,12 +120,12 @@ mod evaluation {
         let neq_different_types =
             Expression::mk_binary(OpTwo::Eq, Expression::from("64.0"), Expression::from(64.0));
 
-        assert_eq!(interpreter.eval(&eq_self, &env), Ok(Value::from(true)));
-        assert_eq!(interpreter.eval(&eq_same, &env), Ok(Value::from(true)));
-        assert_eq!(interpreter.eval(&neq, &env), Ok(Value::from(false)));
+        assert_eq!(interpreter.eval(&eq_self, &env), Ok(Assignment::from(true)));
+        assert_eq!(interpreter.eval(&eq_same, &env), Ok(Assignment::from(true)));
+        assert_eq!(interpreter.eval(&neq, &env), Ok(Assignment::from(false)));
         assert_eq!(
             interpreter.eval(&neq_different_types, &env),
-            Ok(Value::from(false))
+            Ok(Assignment::from(false))
         );
     }
 }

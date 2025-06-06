@@ -445,15 +445,15 @@ impl Parser {
 
             Some(token) => {
                 let expr = match &token.kind {
-                    Number { literal } => Expression::mk_literal(Literal::from(*literal)),
+                    Number { literal } => Expression::mk_numeric(*literal),
 
-                    String { literal } => Expression::mk_literal(Literal::from(literal.to_owned())),
+                    String { literal } => Expression::mk_string(literal.to_owned()),
 
-                    True => Expression::mk_literal(Literal::True),
+                    True => Expression::mk_true(),
 
-                    False => Expression::mk_literal(Literal::False),
+                    False => Expression::mk_false(),
 
-                    Nil => Expression::mk_literal(Literal::Nil),
+                    Nil => Expression::mk_nil(),
 
                     Identifier { id } => Expression::mk_identifier(id.to_owned()),
 

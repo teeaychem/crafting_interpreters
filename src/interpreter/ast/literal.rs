@@ -1,4 +1,4 @@
-use crate::interpreter::evaluation::value::Value;
+use crate::interpreter::evaluation::value::Assignment;
 use std::{fmt::Display, panic};
 
 use crate::interpreter::ast::expression::Expression;
@@ -18,12 +18,6 @@ impl From<f64> for Literal {
     }
 }
 
-impl From<f64> for Expression {
-    fn from(value: f64) -> Self {
-        Expression::from(Literal::from(value))
-    }
-}
-
 impl From<&str> for Literal {
     fn from(value: &str) -> Self {
         Literal::String {
@@ -32,21 +26,9 @@ impl From<&str> for Literal {
     }
 }
 
-impl From<&str> for Expression {
-    fn from(value: &str) -> Self {
-        Expression::from(Literal::from(value))
-    }
-}
-
 impl From<String> for Literal {
     fn from(value: String) -> Self {
         Literal::String { s: value }
-    }
-}
-
-impl From<String> for Expression {
-    fn from(value: String) -> Self {
-        Expression::from(Literal::from(value))
     }
 }
 
@@ -62,18 +44,18 @@ impl Display for Literal {
     }
 }
 
-impl From<Literal> for Value {
+impl From<Literal> for Assignment {
     fn from(value: Literal) -> Self {
         match value {
-            Literal::Nil => Value::Nil,
+            Literal::Nil => Assignment::Nil,
 
-            Literal::False => Value::from(false),
+            Literal::False => Assignment::from(false),
 
-            Literal::True => Value::from(true),
+            Literal::True => Assignment::from(true),
 
-            Literal::Number { n } => Value::from(n),
+            Literal::Number { n } => Assignment::from(n),
 
-            Literal::String { s } => Value::from(s.to_owned()),
+            Literal::String { s } => Assignment::from(s.to_owned()),
         }
     }
 }

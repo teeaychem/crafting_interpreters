@@ -6,12 +6,39 @@ pub use operators::{OpOne, OpTwo};
 use super::{identifier::Identifier, literal::Literal};
 
 #[derive(Debug, Clone)]
+pub enum Basic {
+    Nil,
+
+    False,
+
+    True,
+
+    Number { n: f64 },
+
+    String { s: String },
+}
+
+impl std::fmt::Display for Basic {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Nil => write!(f, "<Empty>"),
+
+            Self::False => write!(f, "false"),
+
+            Self::True => write!(f, "true"),
+
+            Self::Number { n } => write!(f, "{n}"),
+
+            Self::String { s } => write!(f, "{s}"),
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
 pub enum Expression {
     Empty,
 
-    Literal {
-        l: Literal,
-    },
+    Basic(Basic),
 
     Identifier {
         id: Identifier,
@@ -58,7 +85,7 @@ impl std::fmt::Display for Expression {
         match self {
             Self::Empty => write!(f, "<Empty>"),
 
-            Self::Literal { l } => write!(f, "{l}"),
+            Self::Basic(bexpr) => write!(f, "{bexpr}"),
 
             Self::Identifier { id: l } => write!(f, "{l}"),
 
@@ -98,16 +125,14 @@ mod test {
     fn simple_display() {
         let ast = Expression::Binary {
             op: OpTwo::Star,
+
             a: Box::new(Expression::Unary {
                 op: OpOne::Minus,
-                e: Box::new(Expression::Literal {
-                    l: Literal::Number { n: 123_f64 },
-                }),
+                e: Box::new(Expression::Basic(Basic::Number { n: 123_f64 })),
             }),
+
             b: Box::new(Expression::Grouping {
-                e: Box::new(Expression::Literal {
-                    l: Literal::Number { n: 45.67 },
-                }),
+                e: Box::new(Expression::Basic(Basic::Number { n: 45.67 })),
             }),
         };
 

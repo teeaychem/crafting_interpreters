@@ -5,7 +5,7 @@ use std::borrow::Borrow;
 use crate::interpreter::environment::EnvErr;
 
 #[derive(Clone, Debug, PartialEq)]
-pub enum Value {
+pub enum Assignment {
     Numeric { n: f64 },
 
     String { s: String },
@@ -24,13 +24,13 @@ pub enum EvalErr {
     EnvErr { err: EnvErr },
 }
 
-impl Value {
+impl Assignment {
     pub fn is_truthy(&self) -> bool {
         match self {
-            Value::Numeric { n } => true,
-            Value::String { s } => true,
-            Value::Boolean { b } => *b,
-            Value::Nil => false,
+            Assignment::Numeric { n } => true,
+            Assignment::String { s } => true,
+            Assignment::Boolean { b } => *b,
+            Assignment::Nil => false,
         }
     }
 
@@ -39,42 +39,42 @@ impl Value {
     }
 }
 
-impl From<&str> for Value {
+impl From<&str> for Assignment {
     fn from(value: &str) -> Self {
-        Value::String {
+        Assignment::String {
             s: value.to_owned(),
         }
     }
 }
 
-impl From<String> for Value {
+impl From<String> for Assignment {
     fn from(value: String) -> Self {
-        Value::String { s: value }
+        Assignment::String { s: value }
     }
 }
 
-impl From<f64> for Value {
+impl From<f64> for Assignment {
     fn from(value: f64) -> Self {
         Self::Numeric { n: value }
     }
 }
 
-impl From<bool> for Value {
+impl From<bool> for Assignment {
     fn from(value: bool) -> Self {
         Self::Boolean { b: value }
     }
 }
 
-impl std::fmt::Display for Value {
+impl std::fmt::Display for Assignment {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Value::Nil => write!(f, "nil"),
+            Assignment::Nil => write!(f, "nil"),
 
-            Value::Boolean { b } => write!(f, "{b}"),
+            Assignment::Boolean { b } => write!(f, "{b}"),
 
-            Value::String { s } => write!(f, "{s}"),
+            Assignment::String { s } => write!(f, "{s}"),
 
-            Value::Numeric { n } => write!(f, "{n}"),
+            Assignment::Numeric { n } => write!(f, "{n}"),
         }
     }
 }
