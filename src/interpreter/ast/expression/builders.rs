@@ -60,9 +60,9 @@ impl Expr {
         Expr::Basic(ExprB::Nil)
     }
 
-    pub fn mk_call(callee: Expr, args: Vec<Expr>) -> Self {
+    pub fn mk_call(caller: Expr, args: Vec<Expr>) -> Self {
         Expr::Call {
-            callee: Box::new(callee),
+            caller: Box::new(caller),
             args,
         }
     }

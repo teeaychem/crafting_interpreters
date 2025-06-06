@@ -4,7 +4,7 @@ mod builders;
 
 pub type Statements = Vec<Statement>;
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum Statement {
     Empty,
 

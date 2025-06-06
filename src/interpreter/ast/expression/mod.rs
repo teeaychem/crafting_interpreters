@@ -3,17 +3,54 @@ mod operators;
 
 pub use operators::{OpOne, OpTwo};
 
-use super::identifier::Identifier;
+use crate::interpreter::environment::EnvHandle;
 
-#[derive(Debug, Clone, PartialEq)]
+use super::{
+    identifier::Identifier,
+    statement::{Statement, Statements},
+};
+
+#[derive(Clone, Debug)]
 pub enum ExprB {
     Nil,
 
-    Boolean { b: bool },
+    Boolean {
+        b: bool,
+    },
 
-    Numeric { n: f64 },
+    Numeric {
+        n: f64,
+    },
 
-    String { s: String },
+    String {
+        s: String,
+    },
+
+    Lambda {
+        env: EnvHandle,
+        params: Vec<Identifier>,
+        body: Statements,
+    },
+}
+
+impl PartialEq for ExprB {
+    fn eq(&self, other: &Self) -> bool {
+        use ExprB::*;
+
+        match (self, other) {
+            (Nil, _) => false,
+
+            (_, Nil) => false,
+
+            (Boolean { b: l }, Boolean { b: r }) => l == r,
+
+            (Numeric { n: l }, Numeric { n: r }) => l == r,
+
+            (String { s: l }, String { s: r }) => l == r,
+
+            _ => false,
+        }
+    }
 }
 
 impl std::fmt::Display for ExprB {
@@ -26,6 +63,8 @@ impl std::fmt::Display for ExprB {
             Self::Numeric { n } => write!(f, "{n}"),
 
             Self::String { s } => write!(f, "{s}"),
+
+            Self::Lambda { env, params, body } => write!(f, "λ"),
         }
     }
 }
@@ -33,9 +72,11 @@ impl std::fmt::Display for ExprB {
 impl ExprB {
     pub fn is_truthy(&self) -> bool {
         match self {
-            Self::Numeric { n } => true,
+            Self::Numeric { .. } => true,
 
-            Self::String { s } => true,
+            Self::String { .. } => true,
+
+            Self::Lambda { .. } => true,
 
             Self::Boolean { b } => *b,
 
@@ -62,7 +103,7 @@ impl ExprB {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Expr {
     Empty,
 
@@ -103,7 +144,7 @@ pub enum Expr {
     },
 
     Call {
-        callee: Box<Expr>,
+        caller: Box<Expr>,
         args: Vec<Expr>,
     },
 }
@@ -132,10 +173,10 @@ impl std::fmt::Display for Expr {
 
             Self::And { a, b } => write!(f, "(AND {a} {b})"),
 
-            Self::Call { callee, args } => write!(
+            Self::Call { caller, args } => write!(
                 f,
                 "{}({})",
-                callee,
+                caller,
                 args.iter()
                     .map(|a| a.to_string())
                     .collect::<Vec<_>>()

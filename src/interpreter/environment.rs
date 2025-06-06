@@ -36,6 +36,11 @@ impl Env {
         Rc::new(RefCell::new(Env::default()))
     }
 
+    pub fn fresh_std_env() -> EnvHandle {
+        let global = Rc::new(RefCell::new(Env::default()));
+        Env::narrow(global)
+    }
+
     pub fn narrow(handle: EnvHandle) -> EnvHandle {
         let depth = handle.borrow().depth + 1;
 
@@ -46,6 +51,10 @@ impl Env {
         };
 
         Rc::new(RefCell::new(narrow_env))
+    }
+
+    pub fn enclosing(&self) -> Option<EnvHandle> {
+        self.enclosing.clone()
     }
 }
 
