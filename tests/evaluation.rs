@@ -19,7 +19,7 @@ mod evaluation {
         let number_negation = Expression::mk_unary(OpOne::Minus, number);
 
         assert_eq!(
-            interpreter.evaluate(&number_negation, &env),
+            interpreter.eval(&number_negation, &env),
             Ok(Value::from(-64.0))
         );
 
@@ -28,7 +28,7 @@ mod evaluation {
         let string_negation = Expression::mk_unary(OpOne::Minus, string);
 
         assert_eq!(
-            interpreter.evaluate(&string_negation, &env),
+            interpreter.eval(&string_negation, &env),
             Ok(Value::from(-64.0))
         );
     }
@@ -47,7 +47,7 @@ mod evaluation {
         let addition = Expression::mk_binary(OpTwo::Star, a, b);
 
         assert_eq!(
-            interpreter.evaluate(&addition, &env),
+            interpreter.eval(&addition, &env),
             Ok(Value::from(a_value * b_value))
         );
     }
@@ -63,7 +63,7 @@ mod evaluation {
         let addition = Expression::mk_binary(OpTwo::Plus, a, b);
 
         assert_eq!(
-            interpreter.evaluate(&addition, &env),
+            interpreter.eval(&addition, &env),
             Ok(Value::from("a string"))
         );
     }
@@ -87,8 +87,8 @@ mod evaluation {
             Expression::from(b_value),
         );
 
-        assert_eq!(interpreter.evaluate(&gt, &env), Ok(Value::from(true)));
-        assert_eq!(interpreter.evaluate(&leq, &env), Ok(Value::from(false)));
+        assert_eq!(interpreter.eval(&gt, &env), Ok(Value::from(true)));
+        assert_eq!(interpreter.eval(&leq, &env), Ok(Value::from(false)));
     }
 
     #[test]
@@ -120,11 +120,11 @@ mod evaluation {
         let neq_different_types =
             Expression::mk_binary(OpTwo::Eq, Expression::from("64.0"), Expression::from(64.0));
 
-        assert_eq!(interpreter.evaluate(&eq_self, &env), Ok(Value::from(true)));
-        assert_eq!(interpreter.evaluate(&eq_same, &env), Ok(Value::from(true)));
-        assert_eq!(interpreter.evaluate(&neq, &env), Ok(Value::from(false)));
+        assert_eq!(interpreter.eval(&eq_self, &env), Ok(Value::from(true)));
+        assert_eq!(interpreter.eval(&eq_same, &env), Ok(Value::from(true)));
+        assert_eq!(interpreter.eval(&neq, &env), Ok(Value::from(false)));
         assert_eq!(
-            interpreter.evaluate(&neq_different_types, &env),
+            interpreter.eval(&neq_different_types, &env),
             Ok(Value::from(false))
         );
     }

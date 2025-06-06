@@ -1,7 +1,7 @@
-use super::{Value, ValueError};
+use super::{EvalErr, Value};
 
 impl Value {
-    pub fn to_boolean(self) -> Result<Self, ValueError> {
+    pub fn to_boolean(self) -> Result<Self, EvalErr> {
         match self {
             Value::Nil => Ok(Value::from(false)),
 
@@ -11,25 +11,25 @@ impl Value {
         }
     }
 
-    pub fn to_numeric(self) -> Result<Self, ValueError> {
+    pub fn to_numeric(self) -> Result<Self, EvalErr> {
         match self {
-            Value::Nil => Err(ValueError::InvalidConversion),
+            Value::Nil => Err(EvalErr::InvalidConversion),
 
-            Value::Boolean { b } => Err(ValueError::InvalidConversion),
+            Value::Boolean { b } => Err(EvalErr::InvalidConversion),
 
             Self::String { s } => match s.parse::<f64>() {
                 Ok(v) => Ok(Value::from(v)),
 
-                Err(_) => Err(ValueError::InvalidConversion),
+                Err(_) => Err(EvalErr::InvalidConversion),
             },
 
             Self::Numeric { .. } => Ok(self),
         }
     }
 
-    pub fn to_string(self) -> Result<Self, ValueError> {
+    pub fn to_string(self) -> Result<Self, EvalErr> {
         let value = match self {
-            Value::Nil => return Err(ValueError::InvalidConversion),
+            Value::Nil => return Err(EvalErr::InvalidConversion),
 
             Value::Boolean { b } => match b {
                 true => Value::from("true"),

@@ -342,4 +342,24 @@ empty_call();
 "#;
         test_io(input, "");
     }
+
+    #[test]
+    fn fn_ternary_addition() {
+        let input = r#"
+fun add(a, b, c) {
+  print a + b + c;
+}
+"#;
+        test_io(input, "");
+    }
+
+    #[test]
+    fn fn_oops() {
+        let input = r#"
+fun or(a, b, c) {
+  print a + b + c;
+}
+"#;
+        test_io(input, "");
+    }
 }

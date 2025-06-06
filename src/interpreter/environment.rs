@@ -10,13 +10,6 @@ use super::ast::{
 
 pub type Assignments = HashMap<Identifier, Value>;
 
-pub struct Function {
-    name: String,
-    arity: usize,
-    args: Vec<Identifier>,
-    task: Statements,
-}
-
 pub type EnvHandle = Rc<RefCell<Env>>;
 
 #[derive(Debug)]

@@ -16,7 +16,7 @@ pub enum Value {
 }
 
 #[derive(Debug, PartialEq)]
-pub enum ValueError {
+pub enum EvalErr {
     ConflictingSubexpression,
     InvalidConversion,
     InvalidAsignTo,
