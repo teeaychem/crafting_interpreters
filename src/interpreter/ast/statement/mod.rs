@@ -1,4 +1,4 @@
-use crate::interpreter::{ast::expression::Expression, parser::value::EvalErr};
+use crate::interpreter::ast::expression::Expression;
 
 use super::{expression, identifier::Identifier};
 

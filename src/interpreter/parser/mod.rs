@@ -7,7 +7,6 @@ use crate::interpreter::{
 };
 
 mod parse;
-pub mod value;
 
 #[derive(Debug)]
 pub enum ParseErr {

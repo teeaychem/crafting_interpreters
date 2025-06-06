@@ -5,7 +5,7 @@ mod evaluation {
         interpreter::{
             ast::expression::{Expression, OpOne, OpTwo},
             environment::Env,
-            parser::value::Value,
+            evaluation::value::Value,
         },
     };
 

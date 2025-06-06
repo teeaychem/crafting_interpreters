@@ -1,6 +1,7 @@
+use crate::interpreter::evaluation::value::Value;
 use std::{fmt::Display, panic};
 
-use crate::interpreter::{ast::expression::Expression, parser::value::Value};
+use crate::interpreter::ast::expression::Expression;
 
 #[derive(Clone, Debug)]
 pub enum Literal {

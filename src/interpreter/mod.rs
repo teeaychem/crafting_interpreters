@@ -9,18 +9,12 @@ pub mod parser;
 pub mod scanner;
 
 use environment::{Env, EnvHandle};
+use evaluation::value::EvalErr;
 
-use crate::interpreter::{
-    ast::{
-        expression::Expression,
-        literal::Literal,
-        statement::{self, Statement, Statements},
-    },
-    parser::value::{self, EvalErr, Value},
-};
+use crate::interpreter::ast::statement::{Statement, Statements};
 
 pub mod environment;
-pub mod evaluate;
+pub mod evaluation;
 
 pub struct Interpreter {}
 
@@ -83,6 +77,12 @@ impl Interpreter {
                     self.interpret(body, env, out);
                 }
             }
+
+            Statement::Fun {
+                id,
+                parameters,
+                body,
+            } => {}
 
             _ => todo!("Inpereter todo: {statement:?}"),
         }
