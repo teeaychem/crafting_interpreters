@@ -10,7 +10,7 @@ mod parse;
 pub mod value;
 
 #[derive(Debug)]
-pub enum ParseError {
+pub enum ParseErr {
     CallArgLimit,
     ExpectedAssignment,
     ForInitialiser,
@@ -19,7 +19,9 @@ pub enum ParseError {
     MissingToken,
     OpenStatement,
     TokensExhausted,
-    UnexpectedToken { token: Tkn },
+    ExpectedFound { expected: TknKind, found: TknKind },
+    Unexpected { found: TknKind },
+    Todo,
 }
 
 #[derive(Debug)]
@@ -90,31 +92,31 @@ impl Parser {
         self.index += 1
     }
 
-    fn check_token(&mut self, check: &TknKind) -> Result<(), ParseError> {
+    fn check_token(&mut self, check: &TknKind) -> Result<(), ParseErr> {
         match self.token() {
             Some(t) if t.kind == *check => Ok(()),
 
             _ => {
                 println!("Failed to find token {check:?}");
-                Err(ParseError::MissingToken)
+                Err(ParseErr::MissingToken)
             }
         }
     }
 
-    fn consume_checked(&mut self, check: &TknKind) -> Result<(), ParseError> {
+    fn consume_checked(&mut self, check: &TknKind) -> Result<(), ParseErr> {
         self.check_token(check)?;
         self.index += 1;
         Ok(())
     }
 
-    fn close_statement(&mut self) -> Result<(), ParseError> {
+    fn close_statement(&mut self) -> Result<(), ParseErr> {
         match self.token() {
             Some(token) if token.kind == TknKind::Semicolon => {
                 self.index += 1;
                 Ok(())
             }
 
-            _ => Err(ParseError::OpenStatement),
+            _ => Err(ParseErr::OpenStatement),
         }
     }
 }
