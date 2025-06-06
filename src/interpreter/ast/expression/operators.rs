@@ -1,4 +1,4 @@
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum OpOne {
     Minus,
     Bang,
@@ -14,7 +14,7 @@ impl std::fmt::Display for OpOne {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum OpTwo {
     Eq,
     Neq,

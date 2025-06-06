@@ -8,6 +8,7 @@ pub mod location;
 pub mod parser;
 pub mod scanner;
 
+use ast::expression::ExprB;
 use environment::{Env, EnvHandle};
 use evaluation::value::EvalErr;
 
@@ -33,11 +34,11 @@ impl Interpreter {
     ) -> Result<(), EvalErr> {
         match statement {
             Statement::Expression { e } => {
-                self.eval(e, env)?;
+                self.eval(e, env, out)?;
             }
 
             Statement::Print { e } => {
-                let evaluation = self.eval(e, env)?;
+                let evaluation = self.eval(e, env, out)?;
 
                 unsafe {
                     out.write(format!("{evaluation}\n").as_bytes());
@@ -47,7 +48,7 @@ impl Interpreter {
             Statement::Declaration { id, e } => {
                 let id = self.get_identifier(id)?;
 
-                let assignment = self.eval(e, env)?;
+                let assignment = self.eval(e, env, out)?;
 
                 env.borrow_mut().insert(id, assignment);
             }
@@ -65,7 +66,7 @@ impl Interpreter {
                 case_if: yes,
                 case_else: no,
             } => {
-                if self.eval(condition, env)?.is_truthy() {
+                if self.eval(condition, env, out)?.is_truthy() {
                     self.interpret(yes, env, out);
                 } else if let Some(no) = no {
                     self.interpret(no, env, out);
@@ -73,7 +74,7 @@ impl Interpreter {
             }
 
             Statement::While { condition, body } => {
-                while self.eval(condition, env)?.is_truthy() {
+                while self.eval(condition, env, out)?.is_truthy() {
                     self.interpret(body, env, out);
                 }
             }
@@ -82,7 +83,15 @@ impl Interpreter {
                 id,
                 parameters,
                 body,
-            } => {}
+            } => {
+                let lambda = ExprB::Lambda {
+                    env: env.borrow().enclosing().expect("!"),
+                    params: parameters.clone(),
+                    body: body.clone(),
+                };
+
+                env.borrow_mut().insert(id.to_owned(), lambda);
+            }
 
             _ => todo!("Inpereter todo: {statement:?}"),
         }

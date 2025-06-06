@@ -25,7 +25,7 @@ mod interpreter {
 
         {
             let interpreter = Interpreter::default();
-            let env = Env::fresh_global_handle();
+            let env = Env::fresh_std_env();
 
             match interpreter.interpret_all(parser.statements(), &env, &mut stream) {
                 Ok(_) => {}
@@ -57,7 +57,7 @@ mod interpreter {
         };
 
         let interpreter = Interpreter::default();
-        let env = Env::fresh_global_handle();
+        let env = Env::fresh_std_env();
 
         match interpreter.interpret_all(parser.statements(), &env, &mut std::io::stdout()) {
             Ok(_) => {}
@@ -320,25 +320,18 @@ for (var b = 1; a < 150; b = temp + b) {
     }
 
     #[test]
-    fn basic_call() {
-        let input = r#"
-add(1, 2);
-"#;
-        test_io(input, "");
-    }
-
-    #[test]
     fn basic_call_call() {
         let input = r#"
-add(1, 2)(3);
-"#;
-        test_io(input, "");
-    }
 
-    #[test]
-    fn empty_call() {
-        let input = r#"
-empty_call();
+fun foward() {
+  back;
+}
+
+fun back() {
+  print a + b + c;
+}
+
+back()();
 "#;
         test_io(input, "");
     }
@@ -349,17 +342,9 @@ empty_call();
 fun add(a, b, c) {
   print a + b + c;
 }
-"#;
-        test_io(input, "");
-    }
 
-    #[test]
-    fn fn_oops() {
-        let input = r#"
-fun or(a, b, c) {
-  print a + b + c;
-}
+add(1, 2, 3);
 "#;
-        test_io(input, "");
+        test_io(input, "6");
     }
 }

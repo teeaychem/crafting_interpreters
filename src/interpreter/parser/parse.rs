@@ -185,8 +185,8 @@ impl Parser {
                 self.consume_checked(&Fun);
 
                 let (id, params) = match self.expression()? {
-                    Expr::Call { callee, args } => {
-                        (self.get_identifier(&callee)?, self.get_identifiers(&args)?)
+                    Expr::Call { caller, args } => {
+                        (self.get_identifier(&caller)?, self.get_identifiers(&args)?)
                     }
 
                     _ => {

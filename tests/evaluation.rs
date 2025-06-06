@@ -11,14 +11,14 @@ mod evaluation {
     #[test]
     fn basic_negation() {
         let interpreter = Interpreter::default();
-        let env = Env::fresh_global_handle();
+        let env = Env::fresh_std_env();
 
         let number = Expr::from(64.0);
 
         let number_negation = Expr::mk_unary(OpOne::Minus, number);
 
         assert_eq!(
-            interpreter.eval(&number_negation, &env),
+            interpreter.eval(&number_negation, &env, &mut std::io::stdout()),
             Ok(ExprB::mk_numeric(-64.0))
         );
 
@@ -27,7 +27,7 @@ mod evaluation {
         let string_negation = Expr::mk_unary(OpOne::Minus, string);
 
         assert_eq!(
-            interpreter.eval(&string_negation, &env),
+            interpreter.eval(&string_negation, &env, &mut std::io::stdout()),
             Ok(ExprB::mk_numeric(-64.0))
         );
     }
@@ -35,7 +35,7 @@ mod evaluation {
     #[test]
     fn basic_arithmetic() {
         let interpreter = Interpreter::default();
-        let env = Env::fresh_global_handle();
+        let env = Env::fresh_std_env();
 
         let a_value = 64.0;
         let b_value = 32.0;
@@ -46,7 +46,7 @@ mod evaluation {
         let addition = Expr::mk_binary(OpTwo::Star, a, b);
 
         assert_eq!(
-            interpreter.eval(&addition, &env),
+            interpreter.eval(&addition, &env, &mut std::io::stdout()),
             Ok(ExprB::mk_numeric(a_value * b_value))
         );
     }
@@ -54,7 +54,7 @@ mod evaluation {
     #[test]
     fn basic_string() {
         let interpreter = Interpreter::default();
-        let env = Env::fresh_global_handle();
+        let env = Env::fresh_std_env();
 
         let a = Expr::from("a ");
         let b = Expr::from("string");
@@ -62,7 +62,7 @@ mod evaluation {
         let addition = Expr::mk_binary(OpTwo::Plus, a, b);
 
         assert_eq!(
-            interpreter.eval(&addition, &env),
+            interpreter.eval(&addition, &env, &mut std::io::stdout()),
             Ok(ExprB::mk_string("a string".to_owned()))
         );
     }
@@ -70,7 +70,7 @@ mod evaluation {
     #[test]
     fn basic_comparison() {
         let interpreter = Interpreter::default();
-        let env = Env::fresh_global_handle();
+        let env = Env::fresh_std_env();
 
         let a_value = 64.0;
         let b_value = 32.0;
@@ -78,14 +78,20 @@ mod evaluation {
         let gt = Expr::mk_binary(OpTwo::Gt, Expr::from(a_value), Expr::from(b_value));
         let leq = Expr::mk_binary(OpTwo::Leq, Expr::from(a_value), Expr::from(b_value));
 
-        assert_eq!(interpreter.eval(&gt, &env), Ok(ExprB::mk_bool(true)));
-        assert_eq!(interpreter.eval(&leq, &env), Ok(ExprB::mk_bool(false)));
+        assert_eq!(
+            interpreter.eval(&gt, &env, &mut std::io::stdout()),
+            Ok(ExprB::mk_bool(true))
+        );
+        assert_eq!(
+            interpreter.eval(&leq, &env, &mut std::io::stdout()),
+            Ok(ExprB::mk_bool(false))
+        );
     }
 
     #[test]
     fn basic_equality() {
         let interpreter = Interpreter::default();
-        let env = Env::fresh_global_handle();
+        let env = Env::fresh_std_env();
 
         let a_value = 64.0;
         let b_value = 32.0;
@@ -102,11 +108,20 @@ mod evaluation {
 
         let neq_different_types = Expr::mk_binary(OpTwo::Eq, Expr::from("64.0"), Expr::from(64.0));
 
-        assert_eq!(interpreter.eval(&eq_self, &env), Ok(ExprB::mk_bool(true)));
-        assert_eq!(interpreter.eval(&eq_same, &env), Ok(ExprB::mk_bool(true)));
-        assert_eq!(interpreter.eval(&neq, &env), Ok(ExprB::mk_bool(false)));
         assert_eq!(
-            interpreter.eval(&neq_different_types, &env),
+            interpreter.eval(&eq_self, &env, &mut std::io::stdout()),
+            Ok(ExprB::mk_bool(true))
+        );
+        assert_eq!(
+            interpreter.eval(&eq_same, &env, &mut std::io::stdout()),
+            Ok(ExprB::mk_bool(true))
+        );
+        assert_eq!(
+            interpreter.eval(&neq, &env, &mut std::io::stdout()),
+            Ok(ExprB::mk_bool(false))
+        );
+        assert_eq!(
+            interpreter.eval(&neq_different_types, &env, &mut std::io::stdout()),
             Ok(ExprB::mk_bool(false))
         );
     }
