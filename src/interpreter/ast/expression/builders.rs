@@ -3,6 +3,8 @@ use crate::interpreter::ast::{
     literal::Literal,
 };
 
+use super::Basic;
+
 impl Expression {
     pub fn mk_assignment(id: Expression, to: Expression) -> Self {
         Expression::Assignment {
@@ -23,8 +25,12 @@ impl Expression {
         Expression::Unary { op, e: Box::new(a) }
     }
 
-    pub fn mk_literal(literal: Literal) -> Self {
-        Expression::Literal { l: literal }
+    pub fn mk_numeric(n: f64) -> Self {
+        Expression::Basic(Basic::Number { n })
+    }
+
+    pub fn mk_string(s: String) -> Self {
+        Expression::Basic(Basic::String { s })
     }
 
     pub fn mk_identifier(id: String) -> Self {
@@ -46,11 +52,15 @@ impl Expression {
     }
 
     pub fn mk_true() -> Self {
-        Expression::Literal { l: Literal::True }
+        Expression::Basic(Basic::True)
     }
 
     pub fn mk_false() -> Self {
-        Expression::Literal { l: Literal::True }
+        Expression::Basic(Basic::False)
+    }
+
+    pub fn mk_nil() -> Self {
+        Expression::Basic(Basic::Nil)
     }
 
     pub fn mk_call(callee: Expression, args: Vec<Expression>) -> Self {
@@ -61,8 +71,16 @@ impl Expression {
     }
 }
 
-impl From<Literal> for Expression {
-    fn from(value: Literal) -> Self {
-        Expression::Literal { l: value }
+impl From<f64> for Expression {
+    fn from(value: f64) -> Self {
+        Expression::Basic(Basic::Number { n: value })
+    }
+}
+
+impl From<&str> for Expression {
+    fn from(value: &str) -> Self {
+        Expression::Basic(Basic::String {
+            s: value.to_owned(),
+        })
     }
 }
