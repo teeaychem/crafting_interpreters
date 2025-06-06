@@ -2,11 +2,10 @@ use std::cell::{RefCell, RefMut};
 use std::rc::Rc;
 use std::{collections::HashMap, mem::swap};
 
-use crate::interpreter::parser::value::Value;
-
 use super::ast::{
     expression::Expression, identifier::Identifier, literal::Literal, statement::Statements,
 };
+use super::evaluation::value::Value;
 
 pub type Assignments = HashMap<Identifier, Value>;
 

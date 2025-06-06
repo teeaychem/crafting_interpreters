@@ -1,15 +1,14 @@
-use super::{
-    Expression, Interpreter,
-    ast::identifier::Identifier,
-    environment::{Env, EnvHandle},
-};
-use crate::interpreter::{
-    ast::{
-        expression::{OpOne, OpTwo},
-        literal::{self, Literal},
+use crate::interpreter::ast::identifier::Identifier;
+use crate::interpreter::evaluation::value::Value;
+use crate::{
+    Interpreter,
+    interpreter::{
+        ast::expression::{Expression, OpOne, OpTwo},
+        environment::EnvHandle,
     },
-    parser::value::{EvalErr, Value},
 };
+
+use crate::interpreter::evaluation::value::EvalErr;
 
 impl Interpreter {
     pub fn eval_boolean(&self, expr: &Expression, env: &EnvHandle) -> Result<bool, EvalErr> {

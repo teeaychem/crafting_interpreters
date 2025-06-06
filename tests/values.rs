@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod value_conversion {
-    use loxy_lib::interpreter::parser::value::Value;
+    use loxy_lib::interpreter::evaluation::value::Value;
 
     #[test]
     fn boolean() {
