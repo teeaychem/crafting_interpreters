@@ -3,6 +3,7 @@ use std::io::Write;
 use crate::interpreter::ast::expression::ExprB;
 use crate::interpreter::ast::identifier::Identifier;
 
+use crate::interpreter::ast::statement::Statement;
 use crate::interpreter::environment::Env;
 use crate::{
     Interpreter,
@@ -86,6 +87,7 @@ impl Interpreter {
 
             Expr::Identifier { id } => match env.borrow().get(id) {
                 None => {
+                    println!("Id `{id}` not found in the following env:");
                     println!("{:?}", env);
                     return Err(EvalErr::InvalidIdentifier { id: id.to_owned() });
                 }
@@ -198,6 +200,8 @@ impl Interpreter {
                         params,
                         body,
                     } => {
+                        let mut return_expr = None;
+
                         let eenv = Env::narrow(lenv);
                         for (id, v) in params.iter().zip(args.iter()) {
                             let bv = self.eval(v, env, out)?;
@@ -205,7 +209,13 @@ impl Interpreter {
                         }
 
                         for statement in &body {
-                            self.interpret(statement, &eenv, out);
+                            return_expr = self.interpret(statement, &eenv, out)?;
+                            if let Statement::Return { .. } = statement {
+                                if let Some(v) = return_expr {
+                                    return Ok(v);
+                                }
+                                break;
+                            }
                         }
                     }
 

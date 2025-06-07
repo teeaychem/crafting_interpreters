@@ -1,4 +1,4 @@
-use crate::interpreter::ast::expression::{Expr, OpOne, OpTwo};
+use crate::interpreter::ast::expression::{Expr, ExprB, OpOne, OpTwo};
 use crate::interpreter::ast::identifier::Identifier;
 use crate::interpreter::scanner::token::{self, Tkn};
 use crate::interpreter::{ast::statement::Statement, scanner::token::TknKind};
@@ -206,6 +206,14 @@ impl Parser {
             }
 
             Semicolon => stmt = Statement::Empty,
+
+            Return => {
+                self.consume_checked(&Return);
+                let rexpr = self.expression_delimited(Semicolon)?;
+                println!("{rexpr}");
+                self.consume_checked(&Semicolon);
+                stmt = Statement::Return { expr: rexpr }
+            }
 
             _ => match self.expression() {
                 Err(_) => todo!("Statement {:?}", self.token()),
