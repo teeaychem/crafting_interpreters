@@ -347,4 +347,20 @@ print add(1, 2, 3);
 "#;
         test_io(input, "6");
     }
+
+    #[test]
+    fn water() {
+        let input = r#"
+var a = "global";
+{
+  fun showA() {
+  print a;
+}
+showA();
+var a = "block";
+showA();
+}
+"#;
+        test_io(input, "global\nglobal");
+    }
 }
