@@ -3,7 +3,6 @@ use std::{collections::HashMap, io::Write};
 use std::io::BufRead;
 
 pub mod ast;
-pub mod function;
 pub mod location;
 pub mod parser;
 pub mod scanner;
@@ -89,7 +88,7 @@ impl Interpreter {
                 body,
             } => {
                 let lambda = ExprB::Lambda {
-                    env: env.borrow().enclosing().expect("!"),
+                    env: env.clone(),
                     params: parameters.clone(),
                     body: body.clone(),
                 };
