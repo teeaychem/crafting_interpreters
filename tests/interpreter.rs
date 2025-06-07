@@ -323,27 +323,27 @@ for (var b = 1; a < 150; b = temp + b) {
     fn basic_call_call() {
         let input = r#"
 
-fun foward() {
-  back;
-}
-
 fun back() {
-  print a + b + c;
+  fun forward() {
+    return 2;
+  }
+
+  return forward;
 }
 
-back()();
+print back()();
 "#;
-        test_io(input, "");
+        test_io(input, "2");
     }
 
     #[test]
     fn fn_ternary_addition() {
         let input = r#"
 fun add(a, b, c) {
-  print a + b + c;
+  return a + b + c;
 }
 
-add(1, 2, 3);
+print add(1, 2, 3);
 "#;
         test_io(input, "6");
     }

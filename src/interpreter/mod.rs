@@ -31,7 +31,9 @@ impl Interpreter {
         statement: &Statement,
         env: &EnvHandle,
         out: &mut W,
-    ) -> Result<(), EvalErr> {
+    ) -> Result<Option<ExprB>, EvalErr> {
+        let mut return_expr = None;
+
         match statement {
             Statement::Expression { e } => {
                 self.eval(e, env, out)?;
@@ -50,6 +52,8 @@ impl Interpreter {
 
                 let assignment = self.eval(e, env, out)?;
 
+                return_expr = Some(assignment.clone());
+
                 env.borrow_mut().insert(id, assignment);
             }
 
@@ -57,7 +61,7 @@ impl Interpreter {
                 let mut nenv = Env::narrow(env.clone());
 
                 for statement in statements {
-                    self.interpret(statement, &nenv, out);
+                    return_expr = self.interpret(statement, &nenv, out)?;
                 }
             }
 
@@ -67,9 +71,9 @@ impl Interpreter {
                 case_else: no,
             } => {
                 if self.eval(condition, env, out)?.is_truthy() {
-                    self.interpret(yes, env, out);
+                    return_expr = self.interpret(yes, env, out)?;
                 } else if let Some(no) = no {
-                    self.interpret(no, env, out);
+                    return_expr = self.interpret(no, env, out)?;
                 }
             }
 
@@ -93,10 +97,12 @@ impl Interpreter {
                 env.borrow_mut().insert(id.to_owned(), lambda);
             }
 
+            Statement::Return { expr } => return_expr = Some(self.eval(expr, env, out)?),
+
             _ => todo!("Inpereter todo: {statement:?}"),
         }
 
-        Ok(())
+        Ok(return_expr)
     }
 
     pub fn interpret_all<W: Write>(

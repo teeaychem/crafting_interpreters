@@ -1,5 +1,7 @@
 use crate::interpreter::ast::{expression::Expr, identifier::Identifier};
 
+use super::expression::ExprB;
+
 mod builders;
 
 pub type Statements = Vec<Statement>;
@@ -45,5 +47,9 @@ pub enum Statement {
         id: Identifier,
         parameters: Vec<Identifier>,
         body: Statements,
+    },
+
+    Return {
+        expr: Expr,
     },
 }
