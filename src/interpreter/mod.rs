@@ -4,17 +4,24 @@ use std::io::BufRead;
 
 pub mod ast;
 pub mod location;
-pub mod parser;
-pub mod scanner;
+
+pub mod environment;
+pub mod evaluation;
+
+mod parser;
+pub use parser::Parser;
+
+mod scanner;
+pub use scanner::Scanner;
+
+mod base;
+pub use base::Base;
 
 use ast::expression::ExprB;
 use environment::{Env, EnvHandle};
 use evaluation::value::EvalErr;
 
 use crate::interpreter::ast::statement::{Statement, Statements};
-
-pub mod environment;
-pub mod evaluation;
 
 pub struct Interpreter {}
 
@@ -25,31 +32,31 @@ impl Default for Interpreter {
 }
 
 impl Interpreter {
-    pub fn interpret<W: Write>(
+    pub fn interpret(
         &self,
         statement: &Statement,
         env: &EnvHandle,
-        out: &mut W,
+        base: &mut Base,
     ) -> Result<Option<ExprB>, EvalErr> {
         let mut return_expr = None;
 
         match statement {
             Statement::Expression { e } => {
-                self.eval(e, env, out)?;
+                self.eval(e, env, base)?;
             }
 
             Statement::Print { e } => {
-                let evaluation = self.eval(e, env, out)?;
+                let evaluation = self.eval(e, env, base)?;
 
                 unsafe {
-                    out.write(format!("{evaluation}\n").as_bytes());
+                    base.stdio.write(format!("{evaluation}\n").as_bytes());
                 }
             }
 
             Statement::Declaration { id, e } => {
                 let id = self.get_identifier(id)?;
 
-                let assignment = self.eval(e, env, out)?;
+                let assignment = self.eval(e, env, base)?;
 
                 return_expr = Some(assignment.clone());
 
@@ -60,7 +67,7 @@ impl Interpreter {
                 let mut nenv = Env::narrow(env.clone());
 
                 for statement in statements {
-                    return_expr = self.interpret(statement, &nenv, out)?;
+                    return_expr = self.interpret(statement, &nenv, base)?;
                 }
             }
 
@@ -69,16 +76,16 @@ impl Interpreter {
                 case_if: yes,
                 case_else: no,
             } => {
-                if self.eval(condition, env, out)?.is_truthy() {
-                    return_expr = self.interpret(yes, env, out)?;
+                if self.eval(condition, env, base)?.is_truthy() {
+                    return_expr = self.interpret(yes, env, base)?;
                 } else if let Some(no) = no {
-                    return_expr = self.interpret(no, env, out)?;
+                    return_expr = self.interpret(no, env, base)?;
                 }
             }
 
             Statement::While { condition, body } => {
-                while self.eval(condition, env, out)?.is_truthy() {
-                    self.interpret(body, env, out);
+                while self.eval(condition, env, base)?.is_truthy() {
+                    self.interpret(body, env, base);
                 }
             }
 
@@ -96,7 +103,7 @@ impl Interpreter {
                 env.borrow_mut().insert(id.to_owned(), lambda);
             }
 
-            Statement::Return { expr } => return_expr = Some(self.eval(expr, env, out)?),
+            Statement::Return { expr } => return_expr = Some(self.eval(expr, env, base)?),
 
             _ => todo!("Inpereter todo: {statement:?}"),
         }
@@ -104,14 +111,14 @@ impl Interpreter {
         Ok(return_expr)
     }
 
-    pub fn interpret_all<W: Write>(
+    pub fn interpret_all(
         &self,
         statements: &Statements,
         env: &EnvHandle,
-        out: &mut W,
+        base: &mut Base,
     ) -> Result<(), EvalErr> {
         for statement in statements {
-            self.interpret(statement, env, out)?;
+            self.interpret(statement, env, base)?;
         }
 
         Ok(())

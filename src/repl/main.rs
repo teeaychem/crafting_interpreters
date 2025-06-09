@@ -2,7 +2,7 @@
 
 use std::io::BufRead;
 
-use loxy_lib::{Interpreter, Parser, Scanner};
+use loxy_lib::interpreter::{Interpreter, Parser, Scanner};
 
 fn main() {
     println!("Hello, world!");

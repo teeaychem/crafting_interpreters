@@ -1,11 +1,9 @@
 #[cfg(test)]
 mod evaluation {
-    use loxy_lib::{
-        Interpreter,
-        interpreter::{
-            ast::expression::{Expr, ExprB, OpOne, OpTwo},
-            environment::Env,
-        },
+    use loxy_lib::interpreter::{
+        Base, Interpreter,
+        ast::expression::{Expr, ExprB, OpOne, OpTwo},
+        environment::Env,
     };
 
     #[test]
@@ -18,7 +16,7 @@ mod evaluation {
         let number_negation = Expr::mk_unary(OpOne::Minus, number);
 
         assert_eq!(
-            interpreter.eval(&number_negation, &env, &mut std::io::stdout()),
+            interpreter.eval(&number_negation, &env, &mut Base::default()),
             Ok(ExprB::mk_numeric(-64.0))
         );
 
@@ -27,7 +25,7 @@ mod evaluation {
         let string_negation = Expr::mk_unary(OpOne::Minus, string);
 
         assert_eq!(
-            interpreter.eval(&string_negation, &env, &mut std::io::stdout()),
+            interpreter.eval(&string_negation, &env, &mut Base::default()),
             Ok(ExprB::mk_numeric(-64.0))
         );
     }
@@ -46,7 +44,7 @@ mod evaluation {
         let addition = Expr::mk_binary(OpTwo::Star, a, b);
 
         assert_eq!(
-            interpreter.eval(&addition, &env, &mut std::io::stdout()),
+            interpreter.eval(&addition, &env, &mut Base::default()),
             Ok(ExprB::mk_numeric(a_value * b_value))
         );
     }
@@ -62,7 +60,7 @@ mod evaluation {
         let addition = Expr::mk_binary(OpTwo::Plus, a, b);
 
         assert_eq!(
-            interpreter.eval(&addition, &env, &mut std::io::stdout()),
+            interpreter.eval(&addition, &env, &mut Base::default()),
             Ok(ExprB::mk_string("a string".to_owned()))
         );
     }
@@ -79,11 +77,11 @@ mod evaluation {
         let leq = Expr::mk_binary(OpTwo::Leq, Expr::from(a_value), Expr::from(b_value));
 
         assert_eq!(
-            interpreter.eval(&gt, &env, &mut std::io::stdout()),
+            interpreter.eval(&gt, &env, &mut Base::default()),
             Ok(ExprB::mk_bool(true))
         );
         assert_eq!(
-            interpreter.eval(&leq, &env, &mut std::io::stdout()),
+            interpreter.eval(&leq, &env, &mut Base::default()),
             Ok(ExprB::mk_bool(false))
         );
     }
@@ -109,19 +107,19 @@ mod evaluation {
         let neq_different_types = Expr::mk_binary(OpTwo::Eq, Expr::from("64.0"), Expr::from(64.0));
 
         assert_eq!(
-            interpreter.eval(&eq_self, &env, &mut std::io::stdout()),
+            interpreter.eval(&eq_self, &env, &mut Base::default()),
             Ok(ExprB::mk_bool(true))
         );
         assert_eq!(
-            interpreter.eval(&eq_same, &env, &mut std::io::stdout()),
+            interpreter.eval(&eq_same, &env, &mut Base::default()),
             Ok(ExprB::mk_bool(true))
         );
         assert_eq!(
-            interpreter.eval(&neq, &env, &mut std::io::stdout()),
+            interpreter.eval(&neq, &env, &mut Base::default()),
             Ok(ExprB::mk_bool(false))
         );
         assert_eq!(
-            interpreter.eval(&neq_different_types, &env, &mut std::io::stdout()),
+            interpreter.eval(&neq_different_types, &env, &mut Base::default()),
             Ok(ExprB::mk_bool(false))
         );
     }
