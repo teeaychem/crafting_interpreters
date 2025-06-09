@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod parser {
-    use loxy_lib::{Parser, Scanner};
+    use loxy_lib::interpreter::{Parser, Scanner};
 
     #[test]
     fn simple() {

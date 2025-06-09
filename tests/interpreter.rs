@@ -2,7 +2,7 @@
 mod interpreter {
     use std::io::BufWriter;
 
-    use loxy_lib::{Interpreter, Parser, Scanner, interpreter::environment::Env};
+    use loxy_lib::interpreter::{Base, Interpreter, Parser, Scanner, environment::Env};
 
     fn test_io(input: &str, output: &str) {
         let mut scanner = Scanner::default();
@@ -26,8 +26,10 @@ mod interpreter {
         {
             let interpreter = Interpreter::default();
             let env = Env::fresh_std_env();
+            let mut system = Base::default();
+            system.update_stdio(&mut stream);
 
-            match interpreter.interpret_all(parser.statements(), &env, &mut stream) {
+            match interpreter.interpret_all(parser.statements(), &env, &mut system) {
                 Ok(_) => {}
 
                 Err(e) => panic!("Interpretation error: {e:?}"),
@@ -43,6 +45,7 @@ mod interpreter {
     fn interpret_stdout(input: &str) {
         let mut scanner = Scanner::default();
         let mut parser = Parser::default();
+        let mut system = Base::default();
 
         scanner.scan(input);
         parser.consume_scanner(scanner);
@@ -59,7 +62,7 @@ mod interpreter {
         let interpreter = Interpreter::default();
         let env = Env::fresh_std_env();
 
-        match interpreter.interpret_all(parser.statements(), &env, &mut std::io::stdout()) {
+        match interpreter.interpret_all(parser.statements(), &env, &mut system) {
             Ok(_) => {}
 
             Err(e) => panic!("Interpretation error: {e:?}"),

@@ -1,41 +1,37 @@
 use std::io::Write;
 
-use crate::interpreter::ast::expression::ExprB;
-use crate::interpreter::ast::identifier::Identifier;
-
-use crate::interpreter::ast::statement::Statement;
-use crate::interpreter::environment::Env;
-use crate::{
-    Interpreter,
-    interpreter::{
-        ast::expression::{Expr, OpOne, OpTwo},
-        environment::EnvHandle,
+use crate::interpreter::{
+    Base, Interpreter,
+    ast::{
+        expression::{Expr, ExprB, OpOne, OpTwo},
+        identifier::Identifier,
+        statement::Statement,
     },
+    environment::{Env, EnvHandle},
+    evaluation::value::EvalErr,
 };
 
-use crate::interpreter::evaluation::value::EvalErr;
-
 impl Interpreter {
-    pub fn eval_boolean<W: Write>(
+    pub fn eval_boolean(
         &self,
         expr: &Expr,
         env: &EnvHandle,
-        out: &mut W,
+        base: &mut Base,
     ) -> Result<bool, EvalErr> {
-        match self.eval(expr, env, out)? {
+        match self.eval(expr, env, base)? {
             ExprB::Boolean { b } => Ok(b),
 
             _ => Err(EvalErr::ConflictingSubexpression),
         }
     }
 
-    pub fn eval_numeric<W: Write>(
+    pub fn eval_numeric(
         &self,
         expr: &Expr,
         env: &EnvHandle,
-        out: &mut W,
+        base: &mut Base,
     ) -> Result<f64, EvalErr> {
-        match self.eval(expr, env, out)? {
+        match self.eval(expr, env, base)? {
             ExprB::Numeric { n } => Ok(n),
 
             ExprB::String { s } => {
@@ -50,13 +46,13 @@ impl Interpreter {
         }
     }
 
-    pub fn eval_string<W: Write>(
+    pub fn eval_string(
         &self,
         expr: &Expr,
         env: &EnvHandle,
-        out: &mut W,
+        base: &mut Base,
     ) -> Result<String, EvalErr> {
-        match self.eval(expr, env, out)? {
+        match self.eval(expr, env, base)? {
             ExprB::String { s } => Ok(s.to_owned()),
 
             _ => Err(EvalErr::ConflictingSubexpression),
@@ -71,12 +67,7 @@ impl Interpreter {
         }
     }
 
-    pub fn eval<W: Write>(
-        &self,
-        expr: &Expr,
-        env: &EnvHandle,
-        out: &mut W,
-    ) -> Result<ExprB, EvalErr> {
+    pub fn eval(&self, expr: &Expr, env: &EnvHandle, base: &mut Base) -> Result<ExprB, EvalErr> {
         let value = match expr {
             Expr::Empty => ExprB::Nil,
 
@@ -99,7 +90,7 @@ impl Interpreter {
                 id: name,
                 e: assignment,
             } => {
-                let assignment = self.eval(assignment, env, out)?;
+                let assignment = self.eval(assignment, env, base)?;
 
                 let name = self.get_identifier(name)?;
 
@@ -112,14 +103,14 @@ impl Interpreter {
                 assignment
             }
 
-            Expr::Grouping { e } => self.eval(e, env, out)?,
+            Expr::Grouping { e } => self.eval(e, env, base)?,
 
             Expr::Unary { op, e } => {
                 use OpOne::*;
                 match op {
-                    Minus => ExprB::mk_numeric(-self.eval_numeric(e, env, out)?),
+                    Minus => ExprB::mk_numeric(-self.eval_numeric(e, env, base)?),
 
-                    Bang => ExprB::mk_bool(!(self.eval_boolean(e, env, out)?)),
+                    Bang => ExprB::mk_bool(!(self.eval_boolean(e, env, base)?)),
                 }
             }
 
@@ -127,18 +118,18 @@ impl Interpreter {
                 use OpTwo::*;
                 match op {
                     Minus => ExprB::mk_numeric(
-                        self.eval_numeric(l, env, out)? - self.eval_numeric(r, env, out)?,
+                        self.eval_numeric(l, env, base)? - self.eval_numeric(r, env, base)?,
                     ),
 
                     Slash => ExprB::mk_numeric(
-                        self.eval_numeric(l, env, out)? / self.eval_numeric(r, env, out)?,
+                        self.eval_numeric(l, env, base)? / self.eval_numeric(r, env, base)?,
                     ),
 
                     Star => ExprB::mk_numeric(
-                        self.eval_numeric(l, env, out)? * self.eval_numeric(r, env, out)?,
+                        self.eval_numeric(l, env, base)? * self.eval_numeric(r, env, base)?,
                     ),
 
-                    Plus => match (self.eval(l, env, out)?, self.eval(r, env, out)?) {
+                    Plus => match (self.eval(l, env, base)?, self.eval(r, env, base)?) {
                         (ExprB::Numeric { n: l }, ExprB::Numeric { n: r }) => {
                             ExprB::mk_numeric(l + r)
                         }
@@ -152,49 +143,49 @@ impl Interpreter {
                     },
 
                     Gt => ExprB::mk_bool(
-                        self.eval_numeric(l, env, out)? > self.eval_numeric(r, env, out)?,
+                        self.eval_numeric(l, env, base)? > self.eval_numeric(r, env, base)?,
                     ),
 
                     Geq => ExprB::mk_bool(
-                        self.eval_numeric(l, env, out)? >= self.eval_numeric(r, env, out)?,
+                        self.eval_numeric(l, env, base)? >= self.eval_numeric(r, env, base)?,
                     ),
 
                     Lt => ExprB::mk_bool(
-                        self.eval_numeric(l, env, out)? < self.eval_numeric(r, env, out)?,
+                        self.eval_numeric(l, env, base)? < self.eval_numeric(r, env, base)?,
                     ),
 
                     Leq => ExprB::mk_bool(
-                        self.eval_numeric(l, env, out)? <= self.eval_numeric(r, env, out)?,
+                        self.eval_numeric(l, env, base)? <= self.eval_numeric(r, env, base)?,
                     ),
 
-                    Eq => ExprB::mk_bool(self.eval(l, env, out)? == self.eval(r, env, out)?),
+                    Eq => ExprB::mk_bool(self.eval(l, env, base)? == self.eval(r, env, base)?),
 
-                    Neq => ExprB::mk_bool(self.eval(l, env, out)? != self.eval(r, env, out)?),
+                    Neq => ExprB::mk_bool(self.eval(l, env, base)? != self.eval(r, env, base)?),
                 }
             }
 
             Expr::Or { a, b } => {
-                let a_value = self.eval(a, env, out)?;
+                let a_value = self.eval(a, env, base)?;
 
                 if a_value.is_truthy() {
                     a_value
                 } else {
-                    self.eval(b, env, out)?
+                    self.eval(b, env, base)?
                 }
             }
 
             Expr::And { a, b } => {
-                let a_value = self.eval(a, env, out)?;
+                let a_value = self.eval(a, env, base)?;
 
                 if a_value.is_falsey() {
                     a_value
                 } else {
-                    self.eval(b, env, out)?
+                    self.eval(b, env, base)?
                 }
             }
 
             Expr::Call { caller, args } => {
-                match self.eval(caller, env, out)? {
+                match self.eval(caller, env, base)? {
                     ExprB::Lambda {
                         env: lenv,
                         params,
@@ -204,12 +195,12 @@ impl Interpreter {
 
                         let eenv = Env::narrow(lenv);
                         for (id, v) in params.iter().zip(args.iter()) {
-                            let bv = self.eval(v, env, out)?;
+                            let bv = self.eval(v, env, base)?;
                             eenv.borrow_mut().insert(id.to_owned(), bv);
                         }
 
                         for statement in &body {
-                            return_expr = self.interpret(statement, &eenv, out)?;
+                            return_expr = self.interpret(statement, &eenv, base)?;
                             if let Statement::Return { .. } = statement {
                                 if let Some(v) = return_expr {
                                     return Ok(v);

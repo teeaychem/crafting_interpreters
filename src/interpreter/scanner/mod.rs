@@ -7,6 +7,9 @@ use crate::interpreter::{
 
 pub mod token;
 
+#[cfg(test)]
+mod scanner_tests;
+
 pub struct Scanner {
     pub location: Location,
     pub tokens: Tkns,
