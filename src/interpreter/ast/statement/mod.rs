@@ -8,25 +8,16 @@ pub type Statements = Vec<Statement>;
 
 #[derive(Clone, Debug)]
 pub enum Statement {
-    Empty,
-
-    Expression {
-        e: Expr,
-    },
-
-    Print {
-        e: Expr,
-    },
-
-    Declaration {
-        id: Identifier,
-        e: Expr,
-    },
-
     Assignment {
         id: Expr,
         e: Expr,
     },
+
+    Block {
+        statements: Vec<Statement>,
+    },
+
+    Break,
 
     Conditional {
         condition: Expr,
@@ -34,13 +25,15 @@ pub enum Statement {
         case_else: Option<Box<Statement>>,
     },
 
-    While {
-        condition: Expr,
-        body: Box<Statement>,
+    Declaration {
+        id: Identifier,
+        e: Expr,
     },
 
-    Block {
-        statements: Vec<Statement>,
+    Empty,
+
+    Expression {
+        e: Expr,
     },
 
     Function {
@@ -49,7 +42,16 @@ pub enum Statement {
         body: Statements,
     },
 
+    Print {
+        e: Expr,
+    },
+
     Return {
         expr: Expr,
+    },
+
+    While {
+        condition: Expr,
+        body: Box<Statement>,
     },
 }

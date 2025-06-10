@@ -12,11 +12,17 @@ use super::{
 
 #[derive(Clone, Debug)]
 pub enum ExprB {
-    Nil,
-
     Boolean {
         b: bool,
     },
+
+    Lambda {
+        env: EnvHandle,
+        params: Vec<Identifier>,
+        body: Statements,
+    },
+
+    Nil,
 
     Numeric {
         n: f64,
@@ -24,12 +30,6 @@ pub enum ExprB {
 
     String {
         s: String,
-    },
-
-    Lambda {
-        env: EnvHandle,
-        params: Vec<Identifier>,
-        body: Statements,
     },
 }
 

@@ -247,6 +247,8 @@ impl Parser {
 
             TknK::Semicolon => stmt = Statement::Empty,
 
+            TknK::Break => stmt = Statement::Break,
+
             TknK::Return => {
                 self.consume(&TknK::Return);
                 let rexpr = self.expression_delimited(env, &TknK::Semicolon)?;
