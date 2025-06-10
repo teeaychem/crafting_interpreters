@@ -1,6 +1,7 @@
-use std::{collections::HashMap, io::Write};
-
-use std::io::BufRead;
+use std::{
+    collections::HashMap,
+    io::{BufRead, Write},
+};
 
 pub mod ast;
 pub mod location;
@@ -17,11 +18,12 @@ pub use scanner::Scanner;
 mod base;
 pub use base::Base;
 
-use ast::expression::ExprB;
+use ast::{
+    expression::ExprB,
+    statement::{Statement, Statements},
+};
 use environment::{Env, EnvHandle};
 use evaluation::value::EvalErr;
-
-use crate::interpreter::ast::statement::{Statement, Statements};
 
 #[cfg(test)]
 mod tests;
@@ -61,7 +63,7 @@ impl Interpreter {
 
                 return_expr = Some(assignment.clone());
 
-                env.borrow_mut().insert(id.clone(), assignment);
+                env.borrow_mut().insert(id.name(), assignment);
             }
 
             Statement::Block { statements } => {
@@ -101,7 +103,7 @@ impl Interpreter {
                     body: body.clone(),
                 };
 
-                env.borrow_mut().insert(id.to_owned(), lambda);
+                env.borrow_mut().insert(id.name(), lambda);
             }
 
             Statement::Return { expr } => return_expr = Some(self.eval(expr, env, base)?),
