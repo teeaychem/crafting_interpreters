@@ -11,7 +11,7 @@ use crate::interpreter::{
 use super::{ParseErr, Parser};
 
 impl Parser {
-    pub fn get_identifier(&self, expr: Expr) -> Result<Identifier, ParseErr> {
+    pub fn to_identifier(&self, expr: Expr) -> Result<Identifier, ParseErr> {
         match expr {
             Expr::Identifier { id: i } => Ok(i),
 
@@ -19,11 +19,11 @@ impl Parser {
         }
     }
 
-    pub fn get_identifiers(&self, expr: Vec<Expr>) -> Result<Vec<Identifier>, ParseErr> {
+    pub fn to_identifiers(&self, expr: Vec<Expr>) -> Result<Vec<Identifier>, ParseErr> {
         let mut identifiers = Vec::default();
 
         for e in expr {
-            identifiers.push(self.get_identifier(e)?);
+            identifiers.push(self.to_identifier(e)?);
         }
 
         Ok(identifiers)
@@ -54,19 +54,19 @@ impl Parser {
 
             match self.expression(env)? {
                 Expr::Assignment { id, e } => {
-                    d_id = self.get_identifier(*id)?;
-                    d_val = Some(*e);
+                    d_id = self.to_identifier(*id)?;
+                    d_val = *e;
                 }
 
                 Expr::Identifier { id } => {
                     d_id = id;
-                    d_val = None;
+                    d_val = Expr::Basic(ExprB::Nil);
                 }
 
                 _ => return Err(ParseErr::ExpectedAssignment),
             };
 
-            env.borrow_mut().insert(d_id.to_owned(), ExprB::Nil);
+            env.borrow_mut().insert(d_id.name(), ExprB::Nil);
 
             self.close_statement();
 
@@ -205,7 +205,7 @@ impl Parser {
 
                 let (id, params) = match self.expression(env)? {
                     Expr::Call { caller, args } => {
-                        (self.get_identifier(*caller)?, self.get_identifiers(args)?)
+                        (self.to_identifier(*caller)?, self.to_identifiers(args)?)
                     }
 
                     _ => {

@@ -1,11 +1,17 @@
-use std::cell::{RefCell, RefMut};
-use std::rc::Rc;
-use std::{collections::HashMap, mem::swap};
+use std::{
+    cell::{RefCell, RefMut},
+    collections::HashMap,
+    mem::swap,
+    rc::Rc,
+};
 
-use super::ast::expression::ExprB;
-use super::ast::{expression::Expr, identifier::Identifier, statement::Statements};
+use super::ast::{
+    expression::{Expr, ExprB},
+    identifier::{Id, Identifier},
+    statement::Statements,
+};
 
-pub type Assignments = HashMap<Identifier, ExprB>;
+pub type Assignments = HashMap<Id, ExprB>;
 
 pub type EnvHandle = Rc<RefCell<Env>>;
 
@@ -59,11 +65,11 @@ impl Env {
 }
 
 impl Env {
-    pub fn insert(&mut self, id: Identifier, v: ExprB) -> Option<ExprB> {
-        self.assignments.insert(id, v)
+    pub fn insert(&mut self, id: impl std::borrow::Borrow<Id>, v: ExprB) -> Option<ExprB> {
+        self.assignments.insert(id.borrow().clone(), v)
     }
 
-    pub fn assign(&mut self, id: &Identifier, mut v: ExprB) -> Result<ExprB, EnvErr> {
+    pub fn assign(&mut self, id: &Id, mut v: ExprB) -> Result<ExprB, EnvErr> {
         match self.assignments.get_mut(id) {
             Some(expr) => {
                 swap(expr, &mut v);
@@ -78,12 +84,24 @@ impl Env {
         }
     }
 
-    pub fn get(&self, id: &Identifier) -> Option<ExprB> {
+    pub fn get(&self, id: &Id) -> Option<ExprB> {
         match self.assignments.get(id) {
             Some(v) => Some(v.clone()),
 
             None => match &self.enclosing {
                 Some(e) => e.borrow().get(id),
+
+                None => None,
+            },
+        }
+    }
+
+    pub fn distance(&self, id: &Id) -> Option<usize> {
+        match self.assignments.get(id) {
+            Some(_) => Some(0),
+
+            None => match &self.enclosing {
+                Some(e) => e.borrow().distance(id).map(|n| n + 1),
 
                 None => None,
             },

@@ -1,6 +1,9 @@
 use crate::interpreter::{
     Statement,
-    ast::{expression::Expr, identifier::Identifier},
+    ast::{
+        expression::{Expr, ExprB},
+        identifier::Identifier,
+    },
 };
 
 use super::Statements;
@@ -18,12 +21,8 @@ impl Statement {
         Self::Print { e }
     }
 
-    pub fn mk_declaration(id: Identifier, e: Option<Expr>) -> Self {
-        match e {
-            Some(expr) => Statement::Declaration { id, e: expr },
-
-            None => Statement::Declaration { id, e: Expr::Empty },
-        }
+    pub fn mk_declaration(id: Identifier, e: Expr) -> Self {
+        Statement::Declaration { id, e }
     }
 
     pub fn mk_assignment(id: Expr, e: Expr) -> Self {

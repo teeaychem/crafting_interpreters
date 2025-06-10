@@ -73,7 +73,7 @@ impl Interpreter {
 
             Expr::Basic(b_expr) => b_expr.clone(),
 
-            Expr::Identifier { id } => match env.borrow().get(id) {
+            Expr::Identifier { id } => match env.borrow().get(id.name()) {
                 None => {
                     println!("Id `{id}` not found in the following env:");
                     println!("{:?}", env);
@@ -91,9 +91,9 @@ impl Interpreter {
             } => {
                 let assignment = self.eval(assignment, env, base)?;
 
-                let name = self.get_identifier(*name.clone())?;
+                let id = self.get_identifier(*name.clone())?;
 
-                match env.borrow_mut().assign(&name, assignment.clone()) {
+                match env.borrow_mut().assign(id.name(), assignment.clone()) {
                     Ok(_) => {}
 
                     Err(e) => return Err(EvalErr::EnvErr { err: e }),
@@ -195,7 +195,7 @@ impl Interpreter {
                         let eenv = Env::narrow(lenv);
                         for (id, v) in params.iter().zip(args.iter()) {
                             let bv = self.eval(v, env, base)?;
-                            eenv.borrow_mut().insert(id.to_owned(), bv);
+                            eenv.borrow_mut().insert(id.name(), bv);
                         }
 
                         for statement in &body {
