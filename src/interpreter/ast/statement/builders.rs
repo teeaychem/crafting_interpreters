@@ -18,7 +18,7 @@ impl Statement {
         Self::Print { e }
     }
 
-    pub fn mk_declaration(id: Expr, e: Option<Expr>) -> Self {
+    pub fn mk_declaration(id: Identifier, e: Option<Expr>) -> Self {
         match e {
             Some(expr) => Statement::Declaration { id, e: expr },
 

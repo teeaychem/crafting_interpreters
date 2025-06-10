@@ -59,11 +59,11 @@ impl Env {
 }
 
 impl Env {
-    pub fn insert(&mut self, id: String, v: ExprB) -> Option<ExprB> {
+    pub fn insert(&mut self, id: Identifier, v: ExprB) -> Option<ExprB> {
         self.assignments.insert(id, v)
     }
 
-    pub fn assign(&mut self, id: &String, mut v: ExprB) -> Result<ExprB, EnvErr> {
+    pub fn assign(&mut self, id: &Identifier, mut v: ExprB) -> Result<ExprB, EnvErr> {
         match self.assignments.get_mut(id) {
             Some(expr) => {
                 swap(expr, &mut v);
@@ -78,7 +78,7 @@ impl Env {
         }
     }
 
-    pub fn get(&self, id: &String) -> Option<ExprB> {
+    pub fn get(&self, id: &Identifier) -> Option<ExprB> {
         match self.assignments.get(id) {
             Some(v) => Some(v.clone()),
 

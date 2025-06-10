@@ -19,7 +19,7 @@ pub enum Statement {
     },
 
     Declaration {
-        id: Expr,
+        id: Identifier,
         e: Expr,
     },
 
