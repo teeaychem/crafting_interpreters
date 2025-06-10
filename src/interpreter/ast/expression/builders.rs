@@ -36,9 +36,9 @@ impl Expr {
         Expr::Basic(ExprB::String { s })
     }
 
-    pub fn mk_identifier(id: String, distance: usize) -> Self {
+    pub fn mk_identifier(id: String, offset: Option<usize>) -> Self {
         Expr::Identifier {
-            id: Identifier::fresh(id, distance),
+            id: Identifier::fresh(id, offset),
         }
     }
 

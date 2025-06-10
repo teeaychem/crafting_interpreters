@@ -4,7 +4,7 @@ use crate::interpreter::{
         identifier::Identifier,
         statement::Statement,
     },
-    environment::EnvHandle,
+    environment::{Env, EnvHandle},
     scanner::token::TknK,
 };
 
@@ -15,7 +15,10 @@ impl Parser {
         match expr {
             Expr::Identifier { id: i } => Ok(i),
 
-            _ => Err(ParseErr::Todo),
+            _ => {
+                panic!("! Identifier expected");
+                // Err(ParseErr::Todo)
+            }
         }
     }
 
@@ -49,21 +52,17 @@ impl Parser {
         if let Some(TknK::Var) = self.token_kind() {
             self.consume(&TknK::Var);
 
-            let d_id;
-            let d_val;
-
-            match self.expression(env)? {
-                Expr::Assignment { id, e } => {
-                    d_id = self.to_identifier(*id)?;
-                    d_val = *e;
+            let primary_expr = self.primary(env)?;
+            let d_id = self.to_identifier(primary_expr)?;
+            let d_val = match self.token_kind() {
+                Some(&TknK::Equal) => {
+                    self.consume(&TknK::Equal);
+                    self.expression(env)?
                 }
 
-                Expr::Identifier { id } => {
-                    d_id = id;
-                    d_val = Expr::Basic(ExprB::Nil);
-                }
+                Some(_) => Expr::Basic(ExprB::Nil),
 
-                _ => return Err(ParseErr::ExpectedAssignment),
+                None => panic!("! Unexpected EOF"),
             };
 
             env.borrow_mut().insert(d_id.name(), ExprB::Nil);
@@ -101,8 +100,10 @@ impl Parser {
 
                 let mut statements = Vec::default();
 
+                let mut block_env = Env::narrow(env.clone());
+
                 while self.token_kind().is_some_and(|kind| kind != &TknK::BraceR) {
-                    statements.push(self.declaration(env)?);
+                    statements.push(self.declaration(&block_env)?);
                 }
 
                 self.consume(&TknK::BraceR);
@@ -138,6 +139,8 @@ impl Parser {
 
             TknK::While => {
                 self.consume(&TknK::While);
+
+                // TODO: Cosmetic parens
                 self.consume(&TknK::ParenL);
                 let condition = self.expression(env)?;
                 self.consume(&TknK::ParenR);
@@ -156,11 +159,14 @@ impl Parser {
 
                 self.consume(&TknK::For);
 
+                let mut for_env = Env::narrow(env.clone());
+                let mut while_env = Env::narrow(for_env.clone());
+
                 let mut loop_block = Vec::default();
 
                 self.consume(&TknK::ParenL);
 
-                let initialiser = self.declaration(env)?;
+                let initialiser = self.declaration(&for_env)?;
                 match initialiser {
                     Statement::Declaration { .. } => loop_block.push(initialiser),
 
@@ -169,16 +175,17 @@ impl Parser {
                     _ => return Err(ParseErr::ForInitialiser),
                 }
 
-                let condition = match self.expression_delimited(env, &TknK::Semicolon)? {
+                let condition = match self.expression_delimited(&for_env, &TknK::Semicolon)? {
                     Expr::Empty => Expr::mk_true(),
                     e => e,
                 };
                 self.consume(&TknK::Semicolon);
 
-                let increment = self.expression_delimited(env, &TknK::ParenR)?;
+                let increment = self.expression_delimited(&while_env, &TknK::ParenR)?;
+
                 self.consume(&TknK::ParenR);
 
-                let mut loop_statements = match self.statement(env)? {
+                let mut while_statements = match self.statement(&for_env)? {
                     Statement::Block { statements } => statements,
 
                     statement => vec![statement],
@@ -187,13 +194,13 @@ impl Parser {
                 match increment {
                     Expr::Empty => {}
 
-                    _ => loop_statements.push(Statement::mk_expression(increment)),
+                    _ => while_statements.push(Statement::mk_expression(increment)),
                 }
 
                 loop_block.push(Statement::mk_while(
                     condition,
                     Statement::Block {
-                        statements: loop_statements,
+                        statements: while_statements,
                     },
                 ));
 
@@ -203,9 +210,13 @@ impl Parser {
             TknK::Function => {
                 self.consume(&TknK::Function);
 
-                let (id, params) = match self.expression(env)? {
+                let id;
+                let params;
+
+                match self.expression(env)? {
                     Expr::Call { caller, args } => {
-                        (self.to_identifier(*caller)?, self.to_identifiers(args)?)
+                        id = self.to_identifier(*caller)?;
+                        params = self.to_identifiers(args)?;
                     }
 
                     _ => {
@@ -215,13 +226,23 @@ impl Parser {
                     }
                 };
 
-                let body = match self.statement(env)? {
+                env.borrow_mut().insert(id.name(), ExprB::Nil);
+
+                let mut lambda_env = Env::narrow(env.clone());
+                {
+                    let mut e = lambda_env.borrow_mut();
+                    for p in &params {
+                        e.insert(p.name(), ExprB::Nil);
+                    }
+                }
+
+                let body = match self.statement(&lambda_env)? {
                     Statement::Block { statements } => statements,
 
                     _ => panic!("! Block expected"),
                 };
 
-                stmt = Statement::mk_fun(id, params, body);
+                stmt = Statement::mk_function(id, params, body);
             }
 
             TknK::Semicolon => stmt = Statement::Empty,
@@ -229,7 +250,6 @@ impl Parser {
             TknK::Return => {
                 self.consume(&TknK::Return);
                 let rexpr = self.expression_delimited(env, &TknK::Semicolon)?;
-                println!("{rexpr}");
                 self.consume(&TknK::Semicolon);
                 stmt = Statement::Return { expr: rexpr }
             }
@@ -271,7 +291,15 @@ impl Parser {
     fn assignment(&mut self, env: &EnvHandle) -> Result<Expr, ParseErr> {
         if let Some(TknK::Identifier { id }) = self.token_kind() {
             if let Some(TknK::Equal) = self.token_kind_ahead(1) {
-                let id = Expr::mk_identifier(id.to_owned(), usize::MAX);
+                let offset = match env.borrow().offset(id) {
+                    Some(d) => d,
+
+                    None => {
+                        panic!("! No offset found, hek");
+                    }
+                };
+
+                let id = Expr::mk_identifier(id.to_owned(), Some(offset));
 
                 unsafe { self.consume_unchecked() };
                 self.consume(&TknK::Equal);
@@ -290,6 +318,7 @@ impl Parser {
 
         while let Some(TknK::Or) = self.token_kind() {
             self.consume(&TknK::Or);
+
             let right = self.logic_and(env)?;
             expr = Expr::mk_or(expr, right);
         }
@@ -479,7 +508,9 @@ impl Parser {
 
                     TknK::Nil => Expr::mk_nil(),
 
-                    TknK::Identifier { id } => Expr::mk_identifier(id.to_owned(), usize::MAX),
+                    TknK::Identifier { id } => {
+                        Expr::mk_identifier(id.to_owned(), env.borrow().offset(id))
+                    }
 
                     TknK::ParenL => {
                         self.consume(&TknK::ParenL);

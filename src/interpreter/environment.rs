@@ -62,6 +62,10 @@ impl Env {
     pub fn enclosing(&self) -> Option<EnvHandle> {
         self.enclosing.clone()
     }
+
+    pub fn depth(&self) -> usize {
+        self.depth
+    }
 }
 
 impl Env {
@@ -84,27 +88,64 @@ impl Env {
         }
     }
 
-    pub fn get(&self, id: &Id) -> Option<ExprB> {
-        match self.assignments.get(id) {
-            Some(v) => Some(v.clone()),
+    pub fn get(&self, id: &Identifier) -> Option<ExprB> {
+        match id.offset() {
+            None => panic!("! No offset"),
 
-            None => match &self.enclosing {
-                Some(e) => e.borrow().get(id),
+            Some(0) => self.assignments.get(id.name()).cloned(),
 
-                None => None,
-            },
+            Some(mut o) => {
+                let mut ee = self.enclosing();
+                while 1 < o {
+                    ee = ee.expect("! Missing env").borrow_mut().enclosing();
+                    o -= 1;
+                }
+
+                ee.expect("X_X")
+                    .borrow_mut()
+                    .assignments
+                    .get(id.name())
+                    .cloned()
+            }
         }
     }
 
-    pub fn distance(&self, id: &Id) -> Option<usize> {
+    pub fn offset(&self, id: &Id) -> Option<usize> {
         match self.assignments.get(id) {
             Some(_) => Some(0),
 
-            None => match &self.enclosing {
-                Some(e) => e.borrow().distance(id).map(|n| n + 1),
+            None => {
+                let mut offset = 1;
+                let mut ee = self.enclosing();
 
-                None => None,
-            },
+                loop {
+                    match &ee {
+                        Some(ex) => {
+                            if ex.borrow().assignments.contains_key(id) {
+                                return Some(offset);
+                            }
+                        }
+
+                        None => return None,
+                    }
+
+                    offset += 1;
+                    ee = ee.unwrap().borrow().enclosing();
+                }
+
+                None
+            }
         }
+    }
+}
+
+impl std::fmt::Display for Env {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "Env @ {}", self.depth);
+        for (k, v) in &self.assignments {
+            writeln!(f, "\t{k}");
+        }
+
+        Ok(())
     }
 }

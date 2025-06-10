@@ -43,7 +43,7 @@ pub enum Statement {
         statements: Vec<Statement>,
     },
 
-    Fun {
+    Function {
         id: Identifier,
         parameters: Vec<Identifier>,
         body: Statements,

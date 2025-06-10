@@ -359,11 +359,11 @@ fn water() {
 var a = "global";
 {
   fun showA() {
-  print a;
-}
-showA();
-var a = "block";
-showA();
+    print a;
+  }
+  showA();
+  var a = "block";
+  showA();
 }
 "#;
     test_io(input, "global\nglobal");
