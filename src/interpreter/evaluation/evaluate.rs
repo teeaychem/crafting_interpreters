@@ -59,9 +59,9 @@ impl Interpreter {
         }
     }
 
-    pub fn get_identifier(&self, expr: &Expr) -> Result<Identifier, EvalErr> {
+    pub fn get_identifier(&self, expr: Expr) -> Result<Identifier, EvalErr> {
         match expr {
-            Expr::Identifier { id: i } => Ok(i.to_owned()),
+            Expr::Identifier { id: i } => Ok(i),
 
             _ => Err(EvalErr::InvalidAsignTo),
         }
@@ -77,7 +77,9 @@ impl Interpreter {
                 None => {
                     println!("Id `{id}` not found in the following env:");
                     println!("{:?}", env);
-                    return Err(EvalErr::InvalidIdentifier { id: id.to_owned() });
+                    return Err(EvalErr::InvalidIdentifier {
+                        id: id.name.clone(),
+                    });
                 }
 
                 Some(e) => return Ok(e.to_owned()),
@@ -89,7 +91,7 @@ impl Interpreter {
             } => {
                 let assignment = self.eval(assignment, env, base)?;
 
-                let name = self.get_identifier(name)?;
+                let name = self.get_identifier(*name.clone())?;
 
                 match env.borrow_mut().assign(&name, assignment.clone()) {
                     Ok(_) => {}

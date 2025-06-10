@@ -57,13 +57,11 @@ impl Interpreter {
             }
 
             Statement::Declaration { id, e } => {
-                let id = self.get_identifier(id)?;
-
                 let assignment = self.eval(e, env, base)?;
 
                 return_expr = Some(assignment.clone());
 
-                env.borrow_mut().insert(id, assignment);
+                env.borrow_mut().insert(id.clone(), assignment);
             }
 
             Statement::Block { statements } => {

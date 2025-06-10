@@ -1,5 +1,8 @@
 use crate::interpreter::{
-    ast::expression::{Expr, OpOne, OpTwo},
+    ast::{
+        expression::{Expr, OpOne, OpTwo},
+        identifier::Identifier,
+    },
     environment::EnvHandle,
 };
 
@@ -33,8 +36,10 @@ impl Expr {
         Expr::Basic(ExprB::String { s })
     }
 
-    pub fn mk_identifier(id: String) -> Self {
-        Expr::Identifier { id }
+    pub fn mk_identifier(id: String, distance: usize) -> Self {
+        Expr::Identifier {
+            id: Identifier::fresh(id, distance),
+        }
     }
 
     pub fn mk_or(a: Expr, b: Expr) -> Self {

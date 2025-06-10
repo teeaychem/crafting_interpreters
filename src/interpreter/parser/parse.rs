@@ -11,15 +11,15 @@ use crate::interpreter::{
 use super::{ParseErr, Parser};
 
 impl Parser {
-    pub fn get_identifier(&self, expr: &Expr) -> Result<Identifier, ParseErr> {
+    pub fn get_identifier(&self, expr: Expr) -> Result<Identifier, ParseErr> {
         match expr {
-            Expr::Identifier { id: i } => Ok(i.to_owned()),
+            Expr::Identifier { id: i } => Ok(i),
 
             _ => Err(ParseErr::Todo),
         }
     }
 
-    pub fn get_identifiers(&self, expr: &Vec<Expr>) -> Result<Vec<Identifier>, ParseErr> {
+    pub fn get_identifiers(&self, expr: Vec<Expr>) -> Result<Vec<Identifier>, ParseErr> {
         let mut identifiers = Vec::default();
 
         for e in expr {
@@ -54,7 +54,7 @@ impl Parser {
 
             match self.expression(env)? {
                 Expr::Assignment { id, e } => {
-                    d_id = self.get_identifier(&id)?;
+                    d_id = self.get_identifier(*id)?;
                     d_val = Some(*e);
                 }
 
@@ -70,7 +70,7 @@ impl Parser {
 
             self.close_statement();
 
-            Ok(Statement::mk_declaration(Expr::mk_identifier(d_id), d_val))
+            Ok(Statement::mk_declaration(d_id, d_val))
         } else {
             self.statement(env)
         }
@@ -205,7 +205,7 @@ impl Parser {
 
                 let (id, params) = match self.expression(env)? {
                     Expr::Call { caller, args } => {
-                        (self.get_identifier(&caller)?, self.get_identifiers(&args)?)
+                        (self.get_identifier(*caller)?, self.get_identifiers(args)?)
                     }
 
                     _ => {
@@ -271,7 +271,7 @@ impl Parser {
     fn assignment(&mut self, env: &EnvHandle) -> Result<Expr, ParseErr> {
         if let Some(TknK::Identifier { id }) = self.token_kind() {
             if let Some(TknK::Equal) = self.token_kind_ahead(1) {
-                let id = Expr::mk_identifier(id.to_owned());
+                let id = Expr::mk_identifier(id.to_owned(), usize::MAX);
 
                 unsafe { self.consume_unchecked() };
                 self.consume(&TknK::Equal);
@@ -479,7 +479,7 @@ impl Parser {
 
                     TknK::Nil => Expr::mk_nil(),
 
-                    TknK::Identifier { id } => Expr::mk_identifier(id.to_owned()),
+                    TknK::Identifier { id } => Expr::mk_identifier(id.to_owned(), usize::MAX),
 
                     TknK::ParenL => {
                         self.consume(&TknK::ParenL);
