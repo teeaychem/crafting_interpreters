@@ -8,6 +8,9 @@ use crate::interpreter::{
 
 mod parse;
 
+#[cfg(test)]
+mod tests;
+
 #[derive(Debug)]
 pub enum ParseErr {
     CallArgLimit,
@@ -51,7 +54,7 @@ impl Default for Parser {
 }
 
 impl Parser {
-    pub fn consume_scanner(&mut self, scanner: Scanner) {
+    pub fn take_scaner(&mut self, scanner: Scanner) {
         self.tokens = scanner.tokens
     }
 
@@ -59,7 +62,7 @@ impl Parser {
         &self.statements
     }
 
-    pub fn add_statement(&mut self, statement: Statement) {
+    pub fn push_statement(&mut self, statement: Statement) {
         self.statements.push(statement);
     }
 }

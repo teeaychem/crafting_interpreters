@@ -1,5 +1,6 @@
 use crate::interpreter::ast::expression::{Expr, ExprB, OpOne, OpTwo};
 use crate::interpreter::ast::identifier::Identifier;
+use crate::interpreter::environment::EnvHandle;
 use crate::interpreter::scanner::token::{self, Tkn};
 use crate::interpreter::{ast::statement::Statement, scanner::token::TknKind};
 
@@ -26,10 +27,10 @@ impl Parser {
 }
 
 impl Parser {
-    pub fn parse(&mut self) -> Result<(), ParseErr> {
+    pub fn parse(&mut self, env: &EnvHandle) -> Result<(), ParseErr> {
         loop {
-            match self.declaration() {
-                Ok(stmt) => self.add_statement(stmt),
+            match self.declaration(env) {
+                Ok(stmt) => self.push_statement(stmt),
 
                 Err(ParseErr::TokensExhausted) => break,
 
@@ -40,11 +41,11 @@ impl Parser {
         Ok(())
     }
 
-    fn declaration(&mut self) -> Result<Statement, ParseErr> {
+    fn declaration(&mut self, env: &EnvHandle) -> Result<Statement, ParseErr> {
         if let Some(TknKind::Var) = self.token_kind() {
             self.consume_unchecked();
 
-            let stmt = match self.expression()? {
+            let stmt = match self.expression(env)? {
                 Expr::Assignment { id, e: assignment } => {
                     Statement::mk_declaration(*id, Some(*assignment))
                 }
@@ -58,11 +59,11 @@ impl Parser {
 
             Ok(stmt)
         } else {
-            self.statement()
+            self.statement(env)
         }
     }
 
-    fn statement(&mut self) -> Result<Statement, ParseErr> {
+    fn statement(&mut self, env: &EnvHandle) -> Result<Statement, ParseErr> {
         use TknKind::*;
         let stmt;
 
@@ -76,7 +77,7 @@ impl Parser {
 
             Print => {
                 self.consume_unchecked();
-                let expr = self.expression()?;
+                let expr = self.expression(env)?;
                 self.close_statement()?;
 
                 stmt = Statement::mk_print(expr);
@@ -88,7 +89,7 @@ impl Parser {
                 let mut statements = Vec::default();
 
                 while self.token_kind().is_some_and(|kind| *kind != BraceRight) {
-                    statements.push(self.declaration()?);
+                    statements.push(self.declaration(env)?);
                 }
 
                 self.consume_checked(&BraceRight);
@@ -99,16 +100,16 @@ impl Parser {
             If => {
                 self.consume_unchecked();
                 self.consume_checked(&ParenLeft);
-                let expr = self.expression()?;
+                let expr = self.expression(env)?;
                 self.consume_checked(&ParenRight);
 
-                let case_if = self.declaration()?;
+                let case_if = self.declaration(env)?;
                 let mut case_else = None;
 
                 if let Some(t) = self.token() {
                     if t.kind == TknKind::Else {
                         self.consume_unchecked();
-                        case_else = Some(self.declaration()?);
+                        case_else = Some(self.declaration(env)?);
                     }
                 }
 
@@ -120,10 +121,10 @@ impl Parser {
             While => {
                 self.consume_unchecked();
                 self.consume_checked(&ParenLeft);
-                let condition = self.expression()?;
+                let condition = self.expression(env)?;
                 self.consume_checked(&ParenRight);
 
-                let body = self.statement()?;
+                let body = self.statement(env)?;
 
                 stmt = Statement::mk_while(condition, body);
             }
@@ -141,7 +142,7 @@ impl Parser {
 
                 self.consume_checked(&ParenLeft);
 
-                let initialiser = self.declaration()?;
+                let initialiser = self.declaration(env)?;
                 match initialiser {
                     Statement::Declaration { .. } => loop_block.push(initialiser),
 
@@ -150,16 +151,16 @@ impl Parser {
                     _ => return Err(ParseErr::ForInitialiser),
                 }
 
-                let condition = match self.expression_delimited(TknKind::Semicolon)? {
+                let condition = match self.expression_delimited(env, TknKind::Semicolon)? {
                     Expr::Empty => Expr::mk_true(),
                     e => e,
                 };
                 self.consume_checked(&Semicolon);
 
-                let increment = self.expression_delimited(TknKind::ParenRight)?;
+                let increment = self.expression_delimited(env, TknKind::ParenRight)?;
                 self.consume_checked(&ParenRight);
 
-                let mut loop_statements = match self.statement()? {
+                let mut loop_statements = match self.statement(env)? {
                     Statement::Block { statements } => statements,
 
                     statement => vec![statement],
@@ -184,7 +185,7 @@ impl Parser {
             Fun => {
                 self.consume_checked(&Fun);
 
-                let (id, params) = match self.expression()? {
+                let (id, params) = match self.expression(env)? {
                     Expr::Call { caller, args } => {
                         (self.get_identifier(&caller)?, self.get_identifiers(&args)?)
                     }
@@ -196,7 +197,7 @@ impl Parser {
                     }
                 };
 
-                let body = match self.statement()? {
+                let body = match self.statement(env)? {
                     Statement::Block { statements } => statements,
 
                     _ => panic!("! Block expected"),
@@ -209,13 +210,13 @@ impl Parser {
 
             Return => {
                 self.consume_checked(&Return);
-                let rexpr = self.expression_delimited(Semicolon)?;
+                let rexpr = self.expression_delimited(env, Semicolon)?;
                 println!("{rexpr}");
                 self.consume_checked(&Semicolon);
                 stmt = Statement::Return { expr: rexpr }
             }
 
-            _ => match self.expression() {
+            _ => match self.expression(env) {
                 Err(_) => todo!("Statement {:?}", self.token()),
 
                 Ok(expr) => {
@@ -229,8 +230,12 @@ impl Parser {
     }
 
     /// Returns an Expression on a successful parse, or an Expression::Empty on an unsuccesful parse due to an unexpected token of kind `delimiter`.
-    pub fn expression_delimited(&mut self, delimiter: TknKind) -> Result<Expr, ParseErr> {
-        match self.expression() {
+    pub fn expression_delimited(
+        &mut self,
+        env: &EnvHandle,
+        delimiter: TknKind,
+    ) -> Result<Expr, ParseErr> {
+        match self.expression(env) {
             Ok(e) => Ok(e),
 
             Err(e) => match &e {
@@ -241,65 +246,65 @@ impl Parser {
         }
     }
 
-    pub fn expression(&mut self) -> Result<Expr, ParseErr> {
-        self.assignment()
+    pub fn expression(&mut self, env: &EnvHandle) -> Result<Expr, ParseErr> {
+        self.assignment(env)
     }
 
-    fn assignment(&mut self) -> Result<Expr, ParseErr> {
+    fn assignment(&mut self, env: &EnvHandle) -> Result<Expr, ParseErr> {
         if let Some(TknKind::Identifier { id }) = self.token_kind() {
             if let Some(TknKind::Equal) = self.token_kind_ahead(1) {
                 let id = Expr::mk_identifier(id.to_owned());
 
                 self.consume_unchecked();
                 self.consume_checked(&TknKind::Equal);
-                let assignment = self.assignment()?;
+                let assignment = self.assignment(env)?;
                 let expr = Expr::mk_assignment(id, assignment);
 
                 return Ok(expr);
             }
         }
 
-        self.logic_or()
+        self.logic_or(env)
     }
 
-    fn logic_or(&mut self) -> Result<Expr, ParseErr> {
-        let mut expr = self.logic_and()?;
+    fn logic_or(&mut self, env: &EnvHandle) -> Result<Expr, ParseErr> {
+        let mut expr = self.logic_and(env)?;
 
         while let Some(TknKind::Or) = self.token_kind() {
             self.consume_unchecked();
-            let right = self.logic_and()?;
+            let right = self.logic_and(env)?;
             expr = Expr::mk_or(expr, right);
         }
 
         Ok(expr)
     }
 
-    fn logic_and(&mut self) -> Result<Expr, ParseErr> {
-        let mut expr = self.equality()?;
+    fn logic_and(&mut self, env: &EnvHandle) -> Result<Expr, ParseErr> {
+        let mut expr = self.equality(env)?;
 
         while let Some(TknKind::And) = self.token_kind() {
             self.consume_unchecked();
-            let right = self.equality()?;
+            let right = self.equality(env)?;
             expr = Expr::mk_and(expr, right);
         }
 
         Ok(expr)
     }
 
-    fn equality(&mut self) -> Result<Expr, ParseErr> {
-        let mut expr = self.comparison()?;
+    fn equality(&mut self, env: &EnvHandle) -> Result<Expr, ParseErr> {
+        let mut expr = self.comparison(env)?;
 
         while let Some(token) = self.token() {
             match &token.kind {
                 TknKind::EqualEqual => {
                     self.consume_unchecked();
-                    let right = self.comparison()?;
+                    let right = self.comparison(env)?;
                     expr = Expr::mk_binary(OpTwo::Eq, expr, right)
                 }
 
                 TknKind::BangEqual => {
                     self.consume_unchecked();
-                    let right = self.comparison()?;
+                    let right = self.comparison(env)?;
                     expr = Expr::mk_binary(OpTwo::Neq, expr, right);
                 }
 
@@ -310,29 +315,29 @@ impl Parser {
         Ok(expr)
     }
 
-    fn comparison(&mut self) -> Result<Expr, ParseErr> {
-        let mut expr = self.term()?;
+    fn comparison(&mut self, env: &EnvHandle) -> Result<Expr, ParseErr> {
+        let mut expr = self.term(env)?;
 
         'comparison_match: while let Some(token) = self.token() {
             match &token.kind {
                 TknKind::Greater => {
                     self.consume_unchecked();
-                    expr = Expr::mk_binary(OpTwo::Gt, expr, self.comparison()?)
+                    expr = Expr::mk_binary(OpTwo::Gt, expr, self.comparison(env)?)
                 }
 
                 TknKind::GreaterEqual => {
                     self.consume_unchecked();
-                    expr = Expr::mk_binary(OpTwo::Geq, expr, self.comparison()?)
+                    expr = Expr::mk_binary(OpTwo::Geq, expr, self.comparison(env)?)
                 }
 
                 TknKind::Less => {
                     self.consume_unchecked();
-                    expr = Expr::mk_binary(OpTwo::Lt, expr, self.comparison()?)
+                    expr = Expr::mk_binary(OpTwo::Lt, expr, self.comparison(env)?)
                 }
 
                 TknKind::LessEqual => {
                     self.consume_unchecked();
-                    expr = Expr::mk_binary(OpTwo::Leq, expr, self.comparison()?)
+                    expr = Expr::mk_binary(OpTwo::Leq, expr, self.comparison(env)?)
                 }
 
                 _ => break 'comparison_match,
@@ -342,19 +347,19 @@ impl Parser {
         Ok(expr)
     }
 
-    fn term(&mut self) -> Result<Expr, ParseErr> {
-        let mut expr = self.factor()?;
+    fn term(&mut self, env: &EnvHandle) -> Result<Expr, ParseErr> {
+        let mut expr = self.factor(env)?;
 
         while let Some(token) = self.token() {
             match &token.kind {
                 TknKind::Minus => {
                     self.consume_unchecked();
-                    expr = Expr::mk_binary(OpTwo::Minus, expr, self.term()?)
+                    expr = Expr::mk_binary(OpTwo::Minus, expr, self.term(env)?)
                 }
 
                 TknKind::Plus => {
                     self.consume_unchecked();
-                    expr = Expr::mk_binary(OpTwo::Plus, expr, self.term()?)
+                    expr = Expr::mk_binary(OpTwo::Plus, expr, self.term(env)?)
                 }
 
                 _ => break,
@@ -363,19 +368,19 @@ impl Parser {
         Ok(expr)
     }
 
-    fn factor(&mut self) -> Result<Expr, ParseErr> {
-        let mut expr = self.unary()?;
+    fn factor(&mut self, env: &EnvHandle) -> Result<Expr, ParseErr> {
+        let mut expr = self.unary(env)?;
 
         while let Some(token) = self.token() {
             match &token.kind {
                 TknKind::Slash => {
                     self.consume_unchecked();
-                    expr = Expr::mk_binary(OpTwo::Slash, expr, self.factor()?)
+                    expr = Expr::mk_binary(OpTwo::Slash, expr, self.factor(env)?)
                 }
 
                 TknKind::Star => {
                     self.consume_unchecked();
-                    expr = Expr::mk_binary(OpTwo::Star, expr, self.factor()?)
+                    expr = Expr::mk_binary(OpTwo::Star, expr, self.factor(env)?)
                 }
 
                 _ => break,
@@ -385,7 +390,7 @@ impl Parser {
         Ok(expr)
     }
 
-    fn unary(&mut self) -> Result<Expr, ParseErr> {
+    fn unary(&mut self, env: &EnvHandle) -> Result<Expr, ParseErr> {
         match self.token() {
             None => Err(ParseErr::MissingToken),
 
@@ -393,14 +398,14 @@ impl Parser {
                 let expr = match &token.kind {
                     TknKind::Bang => {
                         self.consume_unchecked();
-                        Expr::mk_unary(OpOne::Bang, self.unary()?)
+                        Expr::mk_unary(OpOne::Bang, self.unary(env)?)
                     }
                     TknKind::Minus => {
                         self.consume_unchecked();
-                        Expr::mk_unary(OpOne::Minus, self.unary()?)
+                        Expr::mk_unary(OpOne::Minus, self.unary(env)?)
                     }
 
-                    _ => self.call()?,
+                    _ => self.call(env)?,
                 };
 
                 Ok(expr)
@@ -409,8 +414,8 @@ impl Parser {
     }
 
     #[allow(clippy::while_let_loop)]
-    fn call(&mut self) -> Result<Expr, ParseErr> {
-        let mut expr = self.primary()?;
+    fn call(&mut self, env: &EnvHandle) -> Result<Expr, ParseErr> {
+        let mut expr = self.primary(env)?;
 
         loop {
             match self.token_kind() {
@@ -421,7 +426,7 @@ impl Parser {
                         .token_kind()
                         .is_some_and(|kind| *kind != TknKind::ParenRight)
                     {
-                        args.push(self.expression()?);
+                        args.push(self.expression(env)?);
                         if 255 <= args.len() {
                             return Err(ParseErr::CallArgLimit);
                         }
@@ -443,7 +448,7 @@ impl Parser {
         Ok(expr)
     }
 
-    fn primary(&mut self) -> Result<Expr, ParseErr> {
+    fn primary(&mut self, env: &EnvHandle) -> Result<Expr, ParseErr> {
         use crate::interpreter::scanner::token::TknKind::*;
         match self.token() {
             None => Err(ParseErr::MissingToken),
@@ -464,7 +469,7 @@ impl Parser {
 
                     ParenLeft => {
                         self.consume_unchecked();
-                        let expr = self.expression()?;
+                        let expr = self.expression(env)?;
                         self.check_token(&ParenRight);
 
                         expr

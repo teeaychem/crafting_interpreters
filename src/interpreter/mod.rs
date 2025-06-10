@@ -23,6 +23,9 @@ use evaluation::value::EvalErr;
 
 use crate::interpreter::ast::statement::{Statement, Statements};
 
+#[cfg(test)]
+mod tests;
+
 pub struct Interpreter {}
 
 impl Default for Interpreter {

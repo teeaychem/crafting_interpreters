@@ -1,4 +1,7 @@
-use crate::interpreter::ast::expression::{Expr, OpOne, OpTwo};
+use crate::interpreter::{
+    ast::expression::{Expr, OpOne, OpTwo},
+    environment::EnvHandle,
+};
 
 use super::ExprB;
 
