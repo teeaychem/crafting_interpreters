@@ -4,21 +4,21 @@ pub type Tkns = Vec<Tkn>;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Tkn {
-    pub kind: TknKind,
+    pub kind: TknK,
     pub location: Location,
 }
 
 #[allow(non_camel_case_types)]
 #[derive(Clone, Debug, PartialEq)]
-pub enum TknKind {
+pub enum TknK {
     // Single character
-    BraceLeft,
-    BraceRight,
+    BraceL,
+    BraceR,
     Comma,
     Dot,
     Minus,
-    ParenLeft,
-    ParenRight,
+    ParenL,
+    ParenR,
     Plus,
     Semicolon,
     Slash,
@@ -45,7 +45,7 @@ pub enum TknKind {
     Else,
     False,
     For,
-    Fun,
+    Function,
     If,
     Nil,
     Or,
@@ -62,14 +62,14 @@ pub enum TknKind {
 }
 
 impl Tkn {
-    pub fn new(instance: TknKind, location: Location) -> Self {
+    pub fn new(instance: TknK, location: Location) -> Self {
         Tkn {
             kind: instance,
             location,
         }
     }
 
-    pub fn is(&self, instance: TknKind) -> bool {
+    pub fn is(&self, instance: TknK) -> bool {
         self.kind == instance
     }
 }
@@ -77,8 +77,8 @@ impl Tkn {
 impl std::fmt::Display for Tkn {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.kind {
-            TknKind::Number { literal } => write!(f, "Number: {literal}"),
-            TknKind::String { literal } => write!(f, "String: {literal}",),
+            TknK::Number { literal } => write!(f, "Number: {literal}"),
+            TknK::String { literal } => write!(f, "String: {literal}",),
             _ => write!(f, "Non-literal: {:?}", self.kind),
         }
     }
