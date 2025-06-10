@@ -71,10 +71,7 @@ impl Interpreter {
         let value = match expr {
             Expr::Empty => ExprB::Nil,
 
-            Expr::Basic(bexpr) => {
-                //
-                bexpr.clone()
-            }
+            Expr::Basic(bexpr) => bexpr.clone(),
 
             Expr::Identifier { id } => match env.borrow().get(id) {
                 None => {
