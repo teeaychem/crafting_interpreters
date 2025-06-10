@@ -1,7 +1,7 @@
 use crate::interpreter::{
     Scanner,
     location::Location,
-    scanner::token::{Tkn, TknKind},
+    scanner::token::{Tkn, TknK},
 };
 
 #[test]
@@ -13,15 +13,15 @@ fn scanner_basic_numeric() {
         scanner.tokens,
         vec![
             Tkn {
-                kind: TknKind::Number { literal: 1.0 },
+                kind: TknK::Number { literal: 1.0 },
                 location: Location::default()
             },
             Tkn {
-                kind: TknKind::Number { literal: 0.23 },
+                kind: TknK::Number { literal: 0.23 },
                 location: Location::new(0, 2)
             },
             Tkn {
-                kind: TknKind::Number { literal: 1.23 },
+                kind: TknK::Number { literal: 1.23 },
                 location: Location::new(1, 2)
             }
         ]
@@ -39,35 +39,35 @@ fn scanner_basic_keyword() {
         scanner.tokens,
         vec![
             Tkn {
-                kind: TknKind::Identifier {
+                kind: TknK::Identifier {
                     id: "not".to_string()
                 },
                 location: Location::default()
             },
             Tkn {
-                kind: TknKind::ParenLeft,
+                kind: TknK::ParenL,
                 location: Location::new(0, 4)
             },
             Tkn {
-                kind: TknKind::True,
+                kind: TknK::True,
                 location: Location::new(0, 5)
             },
             Tkn {
-                kind: TknKind::And,
+                kind: TknK::And,
                 location: Location::new(0, 10)
             },
             Tkn {
-                kind: TknKind::Identifier {
+                kind: TknK::Identifier {
                     id: "perhaps".to_string()
                 },
                 location: Location::new(0, 14)
             },
             Tkn {
-                kind: TknKind::False,
+                kind: TknK::False,
                 location: Location::new(0, 22)
             },
             Tkn {
-                kind: TknKind::ParenRight,
+                kind: TknK::ParenR,
                 location: Location::new(0, 27)
             }
         ]
