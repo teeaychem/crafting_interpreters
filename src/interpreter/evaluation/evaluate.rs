@@ -73,10 +73,9 @@ impl Interpreter {
 
             Expr::Basic(b_expr) => b_expr.clone(),
 
-            Expr::Identifier { id } => match env.borrow().get(id.name()) {
+            Expr::Identifier { id } => match env.borrow().get(id) {
                 None => {
-                    println!("Id `{id}` not found in the following env:");
-                    println!("{:?}", env);
+                    panic!("Id `{id}` not found in the following env: {env:?}");
                     return Err(EvalErr::InvalidIdentifier {
                         id: id.name.clone(),
                     });
@@ -190,16 +189,19 @@ impl Interpreter {
                         params,
                         body,
                     } => {
+                        // TODO: Write the args to the same env as the body?
+
                         let mut return_expr = None;
 
-                        let eenv = Env::narrow(lenv);
+                        let args_env = Env::narrow(lenv);
                         for (id, v) in params.iter().zip(args.iter()) {
                             let bv = self.eval(v, env, base)?;
-                            eenv.borrow_mut().insert(id.name(), bv);
+                            args_env.borrow_mut().insert(id.name(), bv);
                         }
 
+                        let body_env = Env::narrow(args_env);
                         for statement in &body {
-                            return_expr = self.interpret(statement, &eenv, base)?;
+                            return_expr = self.interpret(statement, &body_env, base)?;
                             if let Statement::Return { .. } = statement {
                                 if let Some(v) = return_expr {
                                     return Ok(v);

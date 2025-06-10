@@ -87,12 +87,13 @@ impl Interpreter {
             }
 
             Statement::While { condition, body } => {
+                // TODO: Avoid a fresh block each time?
                 while self.eval(condition, env, base)?.is_truthy() {
                     self.interpret(body, env, base);
                 }
             }
 
-            Statement::Fun {
+            Statement::Function {
                 id,
                 parameters,
                 body,

@@ -48,8 +48,8 @@ impl Statement {
         }
     }
 
-    pub fn mk_fun(head: Identifier, args: Vec<Identifier>, body: Statements) -> Self {
-        Statement::Fun {
+    pub fn mk_function(head: Identifier, args: Vec<Identifier>, body: Statements) -> Self {
+        Statement::Function {
             id: head,
             parameters: args,
             body,
