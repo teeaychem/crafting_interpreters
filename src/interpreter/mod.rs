@@ -43,54 +43,61 @@ impl Interpreter {
         env: &EnvHandle,
         base: &mut Base,
     ) -> Result<Option<ExprB>, EvalErr> {
-        let mut return_expr = None;
-
         match statement {
-            Statement::Expression { e } => {
-                self.eval(e, env, base)?;
-            }
+            Statement::Expression { e } => Ok(Some(self.eval(e, env, base)?)),
 
             Statement::Print { e } => {
                 let evaluation = self.eval(e, env, base)?;
 
                 unsafe {
-                    base.stdio.write(format!("{evaluation}\n").as_bytes());
+                    let _ = base.stdio.write(format!("{evaluation}\n").as_bytes());
                 }
+
+                Ok(Some(ExprB::Nil))
             }
 
             Statement::Declaration { id, e } => {
                 let assignment = self.eval(e, env, base)?;
 
-                return_expr = Some(assignment.clone());
+                env.borrow_mut().insert(id.name(), assignment.clone());
 
-                env.borrow_mut().insert(id.name(), assignment);
+                Ok(Some(assignment))
             }
 
             Statement::Block { statements } => {
-                let mut nenv = Env::narrow(env.clone());
+                let mut block_env = Env::narrow(env.clone());
+                let mut block_return = Some(ExprB::Nil);
 
                 for statement in statements {
-                    return_expr = self.interpret(statement, &nenv, base)?;
+                    block_return = self.interpret(statement, &block_env, base)?;
                 }
+
+                Ok(block_return)
             }
 
             Statement::Conditional {
                 condition,
-                case_if: yes,
-                case_else: no,
+                case_if,
+                case_else,
             } => {
                 if self.eval(condition, env, base)?.is_truthy() {
-                    return_expr = self.interpret(yes, env, base)?;
-                } else if let Some(no) = no {
-                    return_expr = self.interpret(no, env, base)?;
+                    Ok(self.interpret(case_if, env, base)?)
+                } else if let Some(otherwise) = case_else {
+                    Ok(self.interpret(otherwise, env, base)?)
+                } else {
+                    Ok(Some(ExprB::Nil))
                 }
             }
 
             Statement::While { condition, body } => {
                 // TODO: Avoid a fresh block each time?
+                let mut block_return = Some(ExprB::Nil);
+
                 while self.eval(condition, env, base)?.is_truthy() {
-                    self.interpret(body, env, base);
+                    block_return = self.interpret(body, env, base)?;
                 }
+
+                Ok(block_return)
             }
 
             Statement::Function {
@@ -105,14 +112,16 @@ impl Interpreter {
                 };
 
                 env.borrow_mut().insert(id.name(), lambda);
+
+                Ok(Some(ExprB::Nil))
             }
 
-            Statement::Return { expr } => return_expr = Some(self.eval(expr, env, base)?),
+            Statement::Return { expr } => Ok(Some(self.eval(expr, env, base)?)),
+
+            Statement::Break => Ok(None),
 
             _ => todo!("Inpereter todo: {statement:?}"),
         }
-
-        Ok(return_expr)
     }
 
     pub fn interpret_all(

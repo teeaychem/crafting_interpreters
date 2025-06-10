@@ -41,6 +41,7 @@ pub enum TknK {
 
     // Keywords
     And,
+    Break,
     Class,
     Else,
     False,
