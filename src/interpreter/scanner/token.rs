@@ -48,6 +48,7 @@ pub enum TknK {
     For,
     Function,
     If,
+    Loop,
     Nil,
     Or,
     Print,

@@ -2,6 +2,7 @@ use std::{
     cell::{RefCell, RefMut},
     collections::HashMap,
     mem::swap,
+    ops::Deref,
     rc::Rc,
 };
 
@@ -15,11 +16,12 @@ pub type Assignments = HashMap<Id, ExprB>;
 
 pub type EnvHandle = Rc<RefCell<Env>>;
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Env {
     assignments: Assignments,
-    depth: usize,
     enclosing: Option<EnvHandle>,
+
+    depth: usize,
 }
 
 #[derive(Debug, PartialEq)]
@@ -31,8 +33,9 @@ impl Default for Env {
     fn default() -> Self {
         Env {
             assignments: Assignments::default(),
-            depth: 0,
             enclosing: None,
+
+            depth: 0,
         }
     }
 }
@@ -49,11 +52,12 @@ impl Env {
 
     pub fn narrow(handle: EnvHandle) -> EnvHandle {
         let depth = handle.borrow().depth + 1;
+        let enclosing = Some(handle.clone());
 
-        let narrow_env = Env {
+        let mut narrow_env = Env {
             assignments: Assignments::default(),
+            enclosing,
             depth,
-            enclosing: Some(handle),
         };
 
         Rc::new(RefCell::new(narrow_env))

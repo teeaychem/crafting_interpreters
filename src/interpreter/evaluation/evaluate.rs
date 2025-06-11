@@ -201,9 +201,9 @@ impl Interpreter {
 
                         let body_env = Env::narrow(args_env);
                         for statement in &body {
-                            return_expr = self.interpret(statement, &body_env, base)?;
+                            return_expr = Some(self.interpret(statement, &body_env, base)?);
                             if let Statement::Return { .. } = statement {
-                                if let Some(v) = return_expr {
+                                if let Some((_, v)) = return_expr {
                                     return Ok(v);
                                 }
                                 break;

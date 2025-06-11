@@ -36,15 +36,20 @@ impl Default for Interpreter {
     }
 }
 
+pub enum Control {
+    Break,
+    Proceed,
+}
+
 impl Interpreter {
     pub fn interpret(
         &self,
         statement: &Statement,
         env: &EnvHandle,
         base: &mut Base,
-    ) -> Result<Option<ExprB>, EvalErr> {
+    ) -> Result<(Control, ExprB), EvalErr> {
         match statement {
-            Statement::Expression { e } => Ok(Some(self.eval(e, env, base)?)),
+            Statement::Expression { e } => Ok((Control::Proceed, self.eval(e, env, base)?)),
 
             Statement::Print { e } => {
                 let evaluation = self.eval(e, env, base)?;
@@ -53,7 +58,7 @@ impl Interpreter {
                     let _ = base.stdio.write(format!("{evaluation}\n").as_bytes());
                 }
 
-                Ok(Some(ExprB::Nil))
+                Ok((Control::Proceed, ExprB::Nil))
             }
 
             Statement::Declaration { id, e } => {
@@ -61,18 +66,20 @@ impl Interpreter {
 
                 env.borrow_mut().insert(id.name(), assignment.clone());
 
-                Ok(Some(assignment))
+                Ok((Control::Proceed, assignment))
             }
 
             Statement::Block { statements } => {
                 let mut block_env = Env::narrow(env.clone());
-                let mut block_return = Some(ExprB::Nil);
+
+                let mut block_return = ExprB::Nil;
+                let mut block_control = Control::Proceed;
 
                 for statement in statements {
-                    block_return = self.interpret(statement, &block_env, base)?;
+                    (block_control, block_return) = self.interpret(statement, &block_env, base)?;
                 }
 
-                Ok(block_return)
+                Ok((block_control, block_return))
             }
 
             Statement::Conditional {
@@ -85,19 +92,45 @@ impl Interpreter {
                 } else if let Some(otherwise) = case_else {
                     Ok(self.interpret(otherwise, env, base)?)
                 } else {
-                    Ok(Some(ExprB::Nil))
+                    Ok((Control::Proceed, ExprB::Nil))
                 }
+            }
+
+            Statement::Loop { statements } => {
+                let mut block_env = Env::narrow(env.clone());
+
+                let mut block_ctl = Control::Proceed;
+                let mut block_rtn = ExprB::Nil;
+
+                'loop_loop: loop {
+                    for statement in statements {
+                        (block_ctl, block_rtn) = self.interpret(statement, &block_env, base)?;
+
+                        match block_ctl {
+                            Control::Break => break 'loop_loop,
+
+                            Control::Proceed => {}
+                        };
+                    }
+                }
+
+                Ok((Control::Proceed, block_rtn))
             }
 
             Statement::While { condition, body } => {
                 // TODO: Avoid a fresh block each time?
-                let mut block_return = Some(ExprB::Nil);
+                let mut block_return = ExprB::Nil;
 
-                while self.eval(condition, env, base)?.is_truthy() {
-                    block_return = self.interpret(body, env, base)?;
-                }
+                let mut loops = vec![];
 
-                Ok(block_return)
+                loops.push(Statement::mk_conditional(
+                    condition.clone(),
+                    Statement::Empty,
+                    Some(Statement::Break),
+                ));
+                loops.extend_from_slice(body);
+
+                self.interpret(&Statement::mk_loop(loops), env, base)
             }
 
             Statement::Function {
@@ -113,12 +146,14 @@ impl Interpreter {
 
                 env.borrow_mut().insert(id.name(), lambda);
 
-                Ok(Some(ExprB::Nil))
+                Ok((Control::Proceed, ExprB::Nil))
             }
 
-            Statement::Return { expr } => Ok(Some(self.eval(expr, env, base)?)),
+            Statement::Return { expr } => Ok((Control::Proceed, self.eval(expr, env, base)?)),
 
-            Statement::Break => Ok(None),
+            Statement::Break => Ok((Control::Break, ExprB::Nil)),
+
+            Statement::Empty => Ok((Control::Proceed, ExprB::Nil)),
 
             _ => todo!("Inpereter todo: {statement:?}"),
         }

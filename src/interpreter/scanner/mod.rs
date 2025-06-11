@@ -122,6 +122,8 @@ impl Scanner {
         let instance = match alphabetic.as_str() {
             "and" => TknK::And,
 
+            "break" => TknK::Break,
+
             "class" => TknK::Class,
 
             "else" => TknK::Else,
@@ -133,6 +135,8 @@ impl Scanner {
             "fun" => TknK::Function,
 
             "if" => TknK::If,
+
+            "loop" => TknK::Loop,
 
             "nil" => TknK::Nil,
 
