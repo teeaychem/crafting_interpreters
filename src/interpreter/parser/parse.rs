@@ -2,7 +2,7 @@ use crate::interpreter::{
     ast::{
         expression::{Expr, ExprB, OpOne, OpTwo},
         identifier::Identifier,
-        statement::Statement,
+        statement::{Statement, Statements},
     },
     environment::{Env, EnvHandle},
     scanner::token::TknK,
@@ -75,6 +75,20 @@ impl Parser {
         }
     }
 
+    fn block_statements(&mut self, block_env: &EnvHandle) -> Result<Statements, ParseErr> {
+        self.consume(&TknK::BraceL);
+
+        let mut statements = Vec::default();
+
+        while self.token_kind().is_some_and(|kind| kind != &TknK::BraceR) {
+            statements.push(self.declaration(block_env)?);
+        }
+
+        self.consume(&TknK::BraceR);
+
+        Ok(statements)
+    }
+
     fn statement(&mut self, env: &EnvHandle) -> Result<Statement, ParseErr> {
         let stmt;
 
@@ -96,19 +110,11 @@ impl Parser {
             }
 
             TknK::BraceL => {
-                self.consume(&TknK::BraceL);
-
-                let mut statements = Vec::default();
-
                 let mut block_env = Env::narrow(env.clone());
 
-                while self.token_kind().is_some_and(|kind| kind != &TknK::BraceR) {
-                    statements.push(self.declaration(&block_env)?);
-                }
-
-                self.consume(&TknK::BraceR);
-
-                stmt = Statement::Block { statements };
+                stmt = Statement::Block {
+                    statements: self.block_statements(&block_env)?,
+                };
             }
 
             TknK::If => {
@@ -137,17 +143,36 @@ impl Parser {
                 stmt = Statement::mk_conditional(expr, case_if, case_else);
             }
 
+            TknK::Loop => {
+                self.consume(&TknK::Loop);
+
+                self.consume(&TknK::BraceL);
+
+                let mut statements = Vec::default();
+
+                let mut loop_env = Env::narrow(env.clone());
+
+                while self.token_kind().is_some_and(|kind| kind != &TknK::BraceR) {
+                    statements.push(self.declaration(&loop_env)?);
+                }
+
+                self.consume(&TknK::BraceR);
+
+                stmt = Statement::mk_loop(statements);
+            }
+
             TknK::While => {
                 self.consume(&TknK::While);
+                let mut loop_env = Env::narrow(env.clone());
 
                 // TODO: Cosmetic parens
                 self.consume(&TknK::ParenL);
-                let condition = self.expression(env)?;
+                let condition = self.expression(&loop_env)?;
                 self.consume(&TknK::ParenR);
 
-                let body = self.statement(env)?;
+                let statements = self.block_statements(&loop_env)?;
 
-                stmt = Statement::mk_while(condition, body);
+                stmt = Statement::mk_while(condition, statements);
             }
 
             TknK::For => {
@@ -175,7 +200,7 @@ impl Parser {
                     _ => return Err(ParseErr::ForInitialiser),
                 }
 
-                let condition = match self.expression_delimited(&for_env, &TknK::Semicolon)? {
+                let condition = match self.expression_delimited(&while_env, &TknK::Semicolon)? {
                     Expr::Empty => Expr::mk_true(),
                     e => e,
                 };
@@ -185,24 +210,15 @@ impl Parser {
 
                 self.consume(&TknK::ParenR);
 
-                let mut while_statements = match self.statement(&for_env)? {
-                    Statement::Block { statements } => statements,
-
-                    statement => vec![statement],
-                };
+                let mut statements = self.block_statements(&while_env)?;
 
                 match increment {
                     Expr::Empty => {}
 
-                    _ => while_statements.push(Statement::mk_expression(increment)),
+                    _ => statements.push(Statement::mk_expression(increment)),
                 }
 
-                loop_block.push(Statement::mk_while(
-                    condition,
-                    Statement::Block {
-                        statements: while_statements,
-                    },
-                ));
+                loop_block.push(Statement::mk_while(condition, statements));
 
                 stmt = Statement::mk_block(loop_block);
             }
@@ -247,7 +263,13 @@ impl Parser {
 
             TknK::Semicolon => stmt = Statement::Empty,
 
-            TknK::Break => stmt = Statement::Break,
+            TknK::Break => {
+                stmt = {
+                    self.consume(&TknK::Break);
+                    self.close_statement()?;
+                    Statement::Break
+                }
+            }
 
             TknK::Return => {
                 self.consume(&TknK::Return);

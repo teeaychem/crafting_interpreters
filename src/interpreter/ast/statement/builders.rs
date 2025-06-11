@@ -41,11 +41,13 @@ impl Statement {
         }
     }
 
-    pub fn mk_while(condition: Expr, body: Statement) -> Self {
-        Statement::While {
-            condition,
-            body: Box::new(body),
-        }
+    pub fn mk_loop(statements: Vec<Statement>) -> Self {
+        println!("Loop: {statements:?}");
+        Statement::Loop { statements }
+    }
+
+    pub fn mk_while(condition: Expr, body: Statements) -> Self {
+        Statement::While { condition, body }
     }
 
     pub fn mk_function(head: Identifier, args: Vec<Identifier>, body: Statements) -> Self {

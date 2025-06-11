@@ -52,6 +52,10 @@ pub enum Statement {
 
     While {
         condition: Expr,
-        body: Box<Statement>,
+        body: Statements,
+    },
+
+    Loop {
+        statements: Vec<Statement>,
     },
 }
