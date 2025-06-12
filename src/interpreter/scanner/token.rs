@@ -64,9 +64,9 @@ pub enum TknK {
 }
 
 impl Tkn {
-    pub fn new(instance: TknK, location: Location) -> Self {
+    pub fn new(token: TknK, location: Location) -> Self {
         Tkn {
-            kind: instance,
+            kind: token,
             location,
         }
     }
@@ -86,6 +86,7 @@ impl std::fmt::Display for Tkn {
     }
 }
 
+#[derive(Debug)]
 pub enum TknErr {
     TrailingDot,
     MultilineString,

@@ -11,6 +11,7 @@ pub mod token;
 mod scanner_tests;
 
 pub struct Scanner {
+    pub source: String,
     pub location: Location,
     pub tokens: Tkns,
 }
@@ -18,6 +19,7 @@ pub struct Scanner {
 impl Default for Scanner {
     fn default() -> Self {
         Scanner {
+            source: String::default(),
             location: Location::default(),
             tokens: Vec::default(),
         }
@@ -25,7 +27,176 @@ impl Default for Scanner {
 }
 
 impl Scanner {
-    fn take_whitespace(&mut self, chars: &mut Peekable<Chars<'_>>) {
+    // Append `src` to the scanner and tokenize.
+    pub fn scan<I: AsRef<str>>(&mut self, src: I) {
+        let source_end = self.source.len();
+
+        self.source.push_str(src.as_ref());
+
+        let held_source = std::mem::take(&mut self.source);
+
+        let mut chars = held_source[source_end..].chars().peekable();
+
+        loop {
+            match self.take_token(&mut chars) {
+                Ok(true) => continue,
+
+                Ok(false) => break,
+
+                Err(e) => panic!("! Scanning failed with error: {e:?}"),
+            }
+        }
+
+        while let Ok(true) = self.take_token(&mut chars) {}
+    }
+
+    // Store `token` and advance the current location by `advance`.
+    fn store_token(&mut self, kind: TknK, advance: usize) {
+        self.tokens.push(Tkn::new(kind, self.location));
+        self.location.advance_col(advance);
+    }
+
+    // Take some token from `chars` and store the result.
+    fn take_token(&mut self, chars: &mut Peekable<Chars<'_>>) -> Result<bool, TknErr> {
+        self.eat_whitespace(chars);
+
+        match chars.peek() {
+            None => Ok(false),
+
+            Some(c) => {
+                match c {
+                    '"' => {
+                        let literal = self.get_string(chars)?;
+                        let advance = literal.len() + 2;
+
+                        self.store_token(TknK::String { literal }, advance);
+                    }
+
+                    '/' => {
+                        chars.next();
+                        if let Some('/') = chars.peek() {
+                            self.eat_until('\n', chars);
+                        } else {
+                            self.store_token(TknK::Slash, 1);
+                        }
+                    }
+
+                    '(' => {
+                        chars.next();
+                        self.store_token(TknK::ParenL, 1);
+                    }
+
+                    ')' => {
+                        chars.next();
+                        self.store_token(TknK::ParenR, 1);
+                    }
+
+                    '{' => {
+                        chars.next();
+                        self.store_token(TknK::BraceL, 1);
+                    }
+
+                    '}' => {
+                        chars.next();
+                        self.store_token(TknK::BraceR, 1);
+                    }
+
+                    ',' => {
+                        chars.next();
+                        self.store_token(TknK::Comma, 1);
+                    }
+
+                    '.' => {
+                        chars.next();
+                        self.store_token(TknK::Dot, 1);
+                    }
+
+                    '-' => {
+                        chars.next();
+                        self.store_token(TknK::Minus, 1);
+                    }
+
+                    '+' => {
+                        chars.next();
+                        self.store_token(TknK::Plus, 1);
+                    }
+
+                    ';' => {
+                        chars.next();
+                        self.store_token(TknK::Semicolon, 1);
+                    }
+
+                    '*' => {
+                        chars.next();
+                        self.store_token(TknK::Star, 1);
+                    }
+
+                    '!' => {
+                        chars.next();
+                        if let Some('=') = chars.peek() {
+                            chars.next();
+                            self.store_token(TknK::BangEqual, 2);
+                        } else {
+                            self.store_token(TknK::Bang, 1);
+                        }
+                    }
+
+                    '=' => {
+                        chars.next();
+                        if let Some('=') = chars.peek() {
+                            chars.next();
+                            self.store_token(TknK::EqualEqual, 2);
+                        } else {
+                            self.store_token(TknK::Equal, 1);
+                        }
+                    }
+
+                    '<' => {
+                        chars.next();
+                        if let Some('=') = chars.peek() {
+                            chars.next();
+                            self.store_token(TknK::LessEqual, 2);
+                        } else {
+                            self.store_token(TknK::Less, 1);
+                        }
+                    }
+
+                    '>' => {
+                        chars.next();
+                        if let Some('=') = chars.peek() {
+                            chars.next();
+                            self.store_token(TknK::GreaterEqual, 2);
+                        } else {
+                            self.store_token(TknK::Greater, 1);
+                        }
+                    }
+
+                    numeric if numeric.is_numeric() => {
+                        let (number, chars) = self.get_f64(chars)?;
+                        self.store_token(TknK::Number { literal: number }, chars);
+                    }
+
+                    alphabetic if alphabetic.is_alphabetic() => {
+                        let (token_kind, advance) = self.get_keyword_or_identifier(chars)?;
+                        self.store_token(token_kind, advance);
+                    }
+
+                    unrecognised => {
+                        return Err(TknErr::Unrecognised {
+                            character: *unrecognised,
+                        });
+                    }
+                }
+
+                Ok(true)
+            }
+        }
+    }
+}
+
+impl Scanner {
+    // Consume indefinate whitespace.
+    fn eat_whitespace(&mut self, chars: &mut Peekable<Chars<'_>>) {
         'whitespace_loop: loop {
             if let Some(c) = chars.peek() {
                 match c {
@@ -43,21 +214,14 @@ impl Scanner {
         }
     }
 
-    fn take_string(&mut self, chars: &mut Peekable<Chars<'_>>) -> Result<(), TknErr> {
+    // Consume tokens until a (closing) `"` is found and return the enclosed string.
+    fn get_string(&mut self, chars: &mut Peekable<Chars<'_>>) -> Result<String, TknErr> {
         chars.next();
         let mut literal = String::default();
 
         while let Some(d) = chars.peek() {
             match d {
                 '"' => {
-                    let length = literal.len() + 2;
-
-                    self.note_token(
-                        TknK::String {
-                            literal: std::mem::take(&mut literal),
-                        },
-                        length,
-                    );
                     chars.next();
                     break;
                 }
@@ -71,23 +235,25 @@ impl Scanner {
             }
         }
 
-        Ok(())
+        Ok(literal)
     }
 
-    fn take_comment(&mut self, chars: &mut Peekable<Chars<'_>>) {
+    // Eat until a `c` is found or all tokens have been consumed.
+    fn eat_until(&mut self, c: char, chars: &mut Peekable<Chars<'_>>) {
         chars.next();
-        while chars.peek().is_some_and(|d| *d != '\n') {
+        while chars.peek().is_some_and(|d| *d != c) {
             chars.next();
         }
         self.location.newline();
     }
 
-    fn take_numeric(&mut self, chars: &mut Peekable<Chars<'_>>) -> Result<(), TknErr> {
+    // Consume numeric tokens until and f64 is identified.
+    fn get_f64(&mut self, chars: &mut Peekable<Chars<'_>>) -> Result<(f64, usize), TknErr> {
         let mut number = String::default();
 
-        while let Some(m) = chars.peek() {
-            if m.is_numeric() || *m == '.' {
-                number.push(*m);
+        while let Some(c) = chars.peek() {
+            if c.is_numeric() || *c == '.' {
+                number.push(*c);
                 chars.next();
             } else {
                 break;
@@ -98,17 +264,14 @@ impl Scanner {
             return Err(TknErr::TrailingDot);
         }
 
-        self.note_token(
-            TknK::Number {
-                literal: number.parse().unwrap(),
-            },
-            number.len(),
-        );
-
-        Ok(())
+        Ok((number.parse().unwrap(), number.len()))
     }
 
-    fn take_alphabetic(&mut self, chars: &mut Peekable<Chars<'_>>) -> Result<(), TknErr> {
+    // Consume alphabetic tokens and return either a keyword or identifier.
+    fn get_keyword_or_identifier(
+        &mut self,
+        chars: &mut Peekable<Chars<'_>>,
+    ) -> Result<(TknK, usize), TknErr> {
         let mut alphabetic = String::default();
         while let Some(b) = chars.peek() {
             if b.is_alphabetic() || *b == '_' {
@@ -161,130 +324,6 @@ impl Scanner {
             },
         };
 
-        self.note_token(instance, alphabetic.len());
-
-        Ok(())
-    }
-
-    fn take_characters(
-        &mut self,
-        chars: &mut Peekable<Chars<'_>>,
-        count: usize,
-        instance: TknK,
-    ) -> Result<(), TknErr> {
-        self.note_token(instance, count);
-        for _ in 0..count {
-            chars.next();
-        }
-
-        Ok(())
-    }
-}
-
-impl Scanner {
-    pub fn scan<I: AsRef<str>>(&mut self, s: I) {
-        let mut chars = s.as_ref().chars().peekable();
-        while let Ok(true) = self.take_token(&mut chars) {}
-    }
-
-    fn scan_punctuation() {}
-
-    fn note_token(&mut self, instance: TknK, advance: usize) {
-        self.tokens.push(Tkn {
-            kind: instance,
-            location: self.location,
-        });
-        self.location.advance_col(advance);
-    }
-
-    pub fn take_token(&mut self, chars: &mut Peekable<Chars<'_>>) -> Result<bool, TknErr> {
-        self.take_whitespace(chars);
-
-        match chars.peek() {
-            None => Ok(false),
-
-            Some(c) => {
-                match c {
-                    '"' => self.take_string(chars)?,
-
-                    '/' => {
-                        chars.next();
-                        if let Some('/') = chars.peek() {
-                            self.take_comment(chars);
-                        } else {
-                            self.note_token(TknK::Slash, 1);
-                        }
-                    }
-
-                    '(' => self.take_characters(chars, 1, TknK::ParenL)?,
-
-                    ')' => self.take_characters(chars, 1, TknK::ParenR)?,
-
-                    '{' => self.take_characters(chars, 1, TknK::BraceL)?,
-
-                    '}' => self.take_characters(chars, 1, TknK::BraceR)?,
-
-                    ',' => self.take_characters(chars, 1, TknK::Comma)?,
-
-                    '.' => self.take_characters(chars, 1, TknK::Dot)?,
-
-                    '-' => self.take_characters(chars, 1, TknK::Minus)?,
-
-                    '+' => self.take_characters(chars, 1, TknK::Plus)?,
-
-                    ';' => self.take_characters(chars, 1, TknK::Semicolon)?,
-
-                    '*' => self.take_characters(chars, 1, TknK::Star)?,
-
-                    '!' => {
-                        chars.next();
-                        if let Some('=') = chars.peek() {
-                            self.take_characters(chars, 1, TknK::BangEqual)?
-                        } else {
-                            self.take_characters(chars, 0, TknK::Bang)?
-                        }
-                    }
-
-                    '=' => {
-                        chars.next();
-                        if let Some('=') = chars.peek() {
-                            self.take_characters(chars, 1, TknK::EqualEqual)?
-                        } else {
-                            self.take_characters(chars, 0, TknK::Equal)?
-                        }
-                    }
-
-                    '<' => {
-                        chars.next();
-                        if let Some('=') = chars.peek() {
-                            self.take_characters(chars, 1, TknK::LessEqual)?
-                        } else {
-                            self.take_characters(chars, 0, TknK::Less)?
-                        }
-                    }
-
-                    '>' => {
-                        chars.next();
-                        if let Some('=') = chars.peek() {
-                            self.take_characters(chars, 1, TknK::GreaterEqual)?
-                        } else {
-                            self.take_characters(chars, 0, TknK::Greater)?
-                        }
-                    }
-
-                    numeric if numeric.is_numeric() => self.take_numeric(chars)?,
-
-                    alphabetic if alphabetic.is_alphabetic() => self.take_alphabetic(chars)?,
-
-                    unrecognised => {
-                        return Err(TknErr::Unrecognised {
-                            character: *unrecognised,
-                        });
-                    }
-                }
-
-                Ok(true)
-            }
-        }
+        Ok((instance, alphabetic.len()))
     }
 }
