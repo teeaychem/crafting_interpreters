@@ -42,7 +42,6 @@ impl Statement {
     }
 
     pub fn mk_loop(statements: Vec<Statement>) -> Self {
-        println!("Loop: {statements:?}");
         Statement::Loop { statements }
     }
 
