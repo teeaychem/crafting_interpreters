@@ -1,7 +1,7 @@
 use std::io::Write;
 
 use crate::interpreter::{
-    Base, Interpreter,
+    Base, TreeWalker,
     ast::{
         expression::{Expr, ExprB, OpOne, OpTwo},
         identifier::Identifier,
@@ -11,7 +11,7 @@ use crate::interpreter::{
     evaluation::value::EvalErr,
 };
 
-impl Interpreter {
+impl TreeWalker {
     pub fn eval_boolean(
         &self,
         expr: &Expr,

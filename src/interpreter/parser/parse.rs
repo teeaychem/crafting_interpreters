@@ -35,7 +35,7 @@ impl Parser {
 
 impl Parser {
     pub fn parse(&mut self) -> Result<(), ParseErr> {
-        let env = std::mem::take(&mut self.env);
+        let env = std::mem::take(&mut self.parse_env);
 
         loop {
             match self.declaration(&env) {
@@ -47,7 +47,7 @@ impl Parser {
             }
         }
 
-        std::mem::replace(&mut self.env, env);
+        std::mem::replace(&mut self.parse_env, env);
 
         Ok(())
     }

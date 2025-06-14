@@ -1,6 +1,6 @@
 use std::io::BufWriter;
 
-use crate::interpreter::{Base, Interpreter, Parser, environment::Env};
+use crate::interpreter::{Base, Parser, TreeWalker, environment::Env};
 
 fn test_io(input: &str, output: &str) {
     let mut parser = Parser::default();
@@ -21,7 +21,7 @@ fn test_io(input: &str, output: &str) {
     let mut stream = BufWriter::new(&mut buffer);
 
     {
-        let interpreter = Interpreter::default();
+        let interpreter = TreeWalker::default();
         let env = Env::fresh_std_env();
         let mut system = Base::default();
         system.update_stdio(&mut stream);
@@ -55,7 +55,7 @@ fn interpret_stdout(input: &str) {
         }
     };
 
-    let interpreter = Interpreter::default();
+    let interpreter = TreeWalker::default();
     let env = Env::fresh_std_env();
 
     match interpreter.interpret_all(parser.statements(), &env, &mut system) {

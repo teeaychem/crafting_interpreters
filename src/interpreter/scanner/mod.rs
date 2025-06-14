@@ -5,29 +5,14 @@ use crate::interpreter::{
     scanner::token::{Tkn, TknErr, TknK, Tkns},
 };
 
+use super::Parser;
+
 pub mod token;
 
 #[cfg(test)]
 mod scanner_tests;
 
-#[derive(Debug)]
-pub struct Scanner {
-    pub source: String,
-    pub location: Location,
-    pub tokens: Tkns,
-}
-
-impl Default for Scanner {
-    fn default() -> Self {
-        Scanner {
-            source: String::default(),
-            location: Location::default(),
-            tokens: Vec::default(),
-        }
-    }
-}
-
-impl Scanner {
+impl Parser {
     // Append `src` to the scanner and tokenize.
     pub fn scan<I: AsRef<str>>(&mut self, src: I) {
         let source_end = self.source.len();
@@ -195,7 +180,7 @@ impl Scanner {
     }
 }
 
-impl Scanner {
+impl Parser {
     // Consume indefinate whitespace.
     fn eat_whitespace(&mut self, chars: &mut Peekable<Chars<'_>>) {
         'whitespace_loop: loop {
