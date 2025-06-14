@@ -1,15 +1,13 @@
-use crate::interpreter::{Parser, Scanner, environment::Env};
+use crate::interpreter::{Parser, environment::Env};
 
 #[test]
 fn simple() {
-    let mut scanner = Scanner::default();
-    let env = Env::fresh_std_env();
-
     let input = "! true == false";
 
-    scanner.scan(input);
+    let mut parser = Parser::default();
+    parser.scan(input);
 
-    let mut parser = Parser::from(scanner);
+    let env = Env::fresh_std_env();
     let expr = parser.expression(&env);
 
     match expr {
@@ -21,14 +19,13 @@ fn simple() {
 
 #[test]
 fn arithmetic() {
-    let mut scanner = Scanner::default();
-    let env = Env::fresh_std_env();
-
     let input = "4 / 3 * - 2";
 
-    scanner.scan(input);
+    let mut parser = Parser::default();
+    parser.scan(input);
 
-    let mut parser = Parser::from(scanner);
+    let env = Env::fresh_std_env();
+
     let expr = parser.expression(&env);
 
     match expr {
@@ -40,14 +37,13 @@ fn arithmetic() {
 
 #[test]
 fn sync() {
-    let mut scanner = Scanner::default();
-    let env = Env::fresh_std_env();
-
     let input = "4 / ; + 2 2; 2 + 2";
 
-    scanner.scan(input);
+    let mut parser = Parser::default();
+    parser.scan(input);
 
-    let mut parser = Parser::from(scanner);
+    let env = Env::fresh_std_env();
+
     let expr = parser.expression(&env);
 
     match expr {

@@ -10,6 +10,7 @@ pub mod token;
 #[cfg(test)]
 mod scanner_tests;
 
+#[derive(Debug)]
 pub struct Scanner {
     pub source: String,
     pub location: Location,
