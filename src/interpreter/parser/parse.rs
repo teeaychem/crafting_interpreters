@@ -35,11 +35,11 @@ impl Parser {
 
 impl Parser {
     pub fn parse(&mut self) -> Result<(), ParseErr> {
-        let env = std::mem::take(&mut self.parse_env);
+        let env = std::mem::take(&mut self.env);
 
         loop {
             match self.declaration(&env) {
-                Ok(stmt) => self.push_statement(stmt),
+                Ok(stmt) => self.statements.push(stmt),
 
                 Err(ParseErr::TokensExhausted) => break,
 
@@ -47,7 +47,7 @@ impl Parser {
             }
         }
 
-        std::mem::replace(&mut self.parse_env, env);
+        std::mem::replace(&mut self.env, env);
 
         Ok(())
     }
@@ -114,7 +114,7 @@ impl Parser {
             }
 
             TknK::BraceL => {
-                let mut block_env = Env::narrow(env.clone());
+                let block_env = Env::narrow(env.clone());
 
                 stmt = Statement::Block {
                     statements: self.block_statements(&block_env)?,
@@ -154,7 +154,7 @@ impl Parser {
 
                 let mut statements = Vec::default();
 
-                let mut loop_env = Env::narrow(env.clone());
+                let loop_env = Env::narrow(env.clone());
 
                 while self.token_kind().is_some_and(|kind| kind != &TknK::BraceR) {
                     statements.push(self.declaration(&loop_env)?);
@@ -167,7 +167,7 @@ impl Parser {
 
             TknK::While => {
                 self.consume(&TknK::While);
-                let mut loop_env = Env::narrow(env.clone());
+                let loop_env = Env::narrow(env.clone());
 
                 // TODO: Cosmetic parens
                 self.consume(&TknK::ParenL);
@@ -188,8 +188,8 @@ impl Parser {
 
                 self.consume(&TknK::For);
 
-                let mut for_env = Env::narrow(env.clone());
-                let mut while_env = Env::narrow(for_env.clone());
+                let for_env = Env::narrow(env.clone());
+                let while_env = Env::narrow(for_env.clone());
 
                 let mut loop_block = Vec::default();
 
@@ -248,7 +248,7 @@ impl Parser {
 
                 env.borrow_mut().insert(id.name(), ExprB::Nil);
 
-                let mut lambda_env = Env::narrow(env.clone());
+                let lambda_env = Env::narrow(env.clone());
                 {
                     let mut e = lambda_env.borrow_mut();
                     for p in &params {
@@ -305,7 +305,7 @@ impl Parser {
             Ok(e) => Ok(e),
 
             Err(e) => match &e {
-                ParseErr::Unexpected { found: delimiter } => Ok(Expr::Empty),
+                ParseErr::Unexpected { found } if found == delimiter => Ok(Expr::Empty),
 
                 _ => Err(e),
             },

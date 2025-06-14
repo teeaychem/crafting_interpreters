@@ -1,7 +1,4 @@
-use std::{
-    collections::HashMap,
-    io::{BufRead, Write},
-};
+use std::io::Write;
 
 pub mod ast;
 pub mod location;
@@ -54,9 +51,7 @@ impl Interpreter {
             Statement::Print { e } => {
                 let evaluation = self.eval(e, env, base)?;
 
-                unsafe {
-                    let _ = base.stdio.write(format!("{evaluation}\n").as_bytes());
-                }
+                let _ = base.stdio.write(format!("{evaluation}\n").as_bytes());
 
                 Ok((Control::Proceed, ExprB::Nil))
             }
@@ -70,7 +65,7 @@ impl Interpreter {
             }
 
             Statement::Block { statements } => {
-                let mut block_env = Env::narrow(env.clone());
+                let block_env = Env::narrow(env.clone());
 
                 let mut block_return = ExprB::Nil;
                 let mut block_control = Control::Proceed;
@@ -97,10 +92,10 @@ impl Interpreter {
             }
 
             Statement::Loop { statements } => {
-                let mut block_env = Env::narrow(env.clone());
+                let block_env = Env::narrow(env.clone());
 
-                let mut block_ctl = Control::Proceed;
-                let mut block_rtn = ExprB::Nil;
+                let mut block_ctl;
+                let mut block_rtn;
 
                 'loop_loop: loop {
                     for statement in statements {
@@ -114,12 +109,11 @@ impl Interpreter {
                     }
                 }
 
-                Ok((Control::Proceed, block_rtn))
+                Ok((block_ctl, block_rtn))
             }
 
             Statement::While { condition, body } => {
                 // TODO: Avoid a fresh block each time?
-                let mut block_return = ExprB::Nil;
 
                 let mut loops = vec![];
 

@@ -1,8 +1,8 @@
 use crate::interpreter::{
-    ast::statement::{Statement, Statements},
+    ast::statement::Statements,
     scanner::{
-        self, Scanner,
-        token::{self, Tkn, TknK, Tkns},
+        Scanner,
+        token::{Tkn, TknK},
     },
 };
 
@@ -33,7 +33,7 @@ pub struct Parser {
     scanner: Scanner,
     statements: Statements,
     index: usize,
-    parse_env: EnvHandle,
+    env: EnvHandle,
 }
 
 impl From<Scanner> for Parser {
@@ -42,7 +42,7 @@ impl From<Scanner> for Parser {
             index: 0,
             scanner: value,
             statements: Vec::default(),
-            parse_env: Env::fresh_std_env(),
+            env: Env::fresh_std_env(),
         }
     }
 }
@@ -53,7 +53,7 @@ impl Default for Parser {
             index: 0,
             scanner: Scanner::default(),
             statements: Statements::default(),
-            parse_env: Env::fresh_std_env(),
+            env: Env::fresh_std_env(),
         }
     }
 }
@@ -63,16 +63,8 @@ impl Parser {
         self.scanner.scan(src);
     }
 
-    pub fn take_scaner(&mut self, scanner: Scanner) {
-        self.scanner.tokens = scanner.tokens
-    }
-
     pub fn statements(&self) -> &Statements {
         &self.statements
-    }
-
-    pub fn push_statement(&mut self, statement: Statement) {
-        self.statements.push(statement);
     }
 }
 
