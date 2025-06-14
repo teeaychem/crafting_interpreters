@@ -27,9 +27,9 @@ mod tests;
 
 #[derive(Debug)]
 pub struct TreeWalker {
-    pub source: String,
-    pub location: Location,
-    pub tokens: Tkns,
+    source: String,
+    location: Location,
+    tokens: Tkns,
     statements: Statements,
     index: usize,
     parse_env: EnvHandle,

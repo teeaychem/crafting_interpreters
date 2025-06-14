@@ -1,5 +1,3 @@
-use std::io::Write;
-
 use crate::interpreter::{
     Base, TreeWalker,
     ast::{
@@ -191,8 +189,6 @@ impl TreeWalker {
                     } => {
                         // TODO: Write the args to the same env as the body?
 
-                        let mut return_expr = None;
-
                         let args_env = Env::narrow(lenv);
                         for (id, v) in params.iter().zip(args.iter()) {
                             let bv = self.eval(v, env, base)?;
@@ -201,12 +197,9 @@ impl TreeWalker {
 
                         let body_env = Env::narrow(args_env);
                         for statement in &body {
-                            return_expr = Some(self.interpret(statement, &body_env, base)?);
+                            let expr = self.interpret(statement, &body_env, base)?;
                             if let Statement::Return { .. } = statement {
-                                if let Some((_, v)) = return_expr {
-                                    return Ok(v);
-                                }
-                                break;
+                                return Ok(expr.1);
                             }
                         }
                     }
