@@ -4,6 +4,7 @@ use crate::interpreter::{
 };
 
 use super::{
+    TreeWalker,
     environment::{Env, EnvHandle},
     location::Location,
     scanner::token::Tkns,
@@ -29,36 +30,13 @@ pub enum ParseErr {
     Unexpected { found: TknK },
 }
 
-#[derive(Debug)]
-pub struct Parser {
-    pub source: String,
-    pub location: Location,
-    pub tokens: Tkns,
-    statements: Statements,
-    index: usize,
-    parse_env: EnvHandle,
-}
-
-impl Default for Parser {
-    fn default() -> Self {
-        Parser {
-            source: String::default(),
-            location: Location::default(),
-            tokens: Vec::default(),
-            index: 0,
-            statements: Statements::default(),
-            parse_env: Env::fresh_std_env(),
-        }
-    }
-}
-
-impl Parser {
+impl TreeWalker {
     pub fn statements(&self) -> &Statements {
         &self.statements
     }
 }
 
-impl Parser {
+impl TreeWalker {
     pub fn token(&self) -> Option<&Tkn> {
         self.tokens.get(self.index)
     }
@@ -114,7 +92,7 @@ impl Parser {
     }
 }
 
-impl Parser {
+impl TreeWalker {
     pub fn syncronise(&mut self) -> bool {
         println!("syncronising parser");
         while let Some(token) = self.token() {

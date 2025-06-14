@@ -1,9 +1,9 @@
 use std::io::BufWriter;
 
-use crate::interpreter::{Base, Parser, TreeWalker, environment::Env};
+use crate::interpreter::{Base, TreeWalker, environment::Env};
 
 fn test_io(input: &str, output: &str) {
-    let mut parser = Parser::default();
+    let mut parser = TreeWalker::default();
 
     parser.scan(input);
 
@@ -40,7 +40,7 @@ fn test_io(input: &str, output: &str) {
 
 #[allow(dead_code)]
 fn interpret_stdout(input: &str) {
-    let mut parser = Parser::default();
+    let mut parser = TreeWalker::default();
     let mut system = Base::default();
 
     parser.scan(input);

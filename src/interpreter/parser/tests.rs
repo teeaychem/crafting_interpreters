@@ -1,10 +1,10 @@
-use crate::interpreter::{Parser, environment::Env};
+use crate::interpreter::{TreeWalker, environment::Env};
 
 #[test]
 fn simple() {
     let input = "! true == false";
 
-    let mut parser = Parser::default();
+    let mut parser = TreeWalker::default();
     parser.scan(input);
 
     let env = Env::fresh_std_env();
@@ -21,7 +21,7 @@ fn simple() {
 fn arithmetic() {
     let input = "4 / 3 * - 2";
 
-    let mut parser = Parser::default();
+    let mut parser = TreeWalker::default();
     parser.scan(input);
 
     let env = Env::fresh_std_env();
@@ -39,7 +39,7 @@ fn arithmetic() {
 fn sync() {
     let input = "4 / ; + 2 2; 2 + 2";
 
-    let mut parser = Parser::default();
+    let mut parser = TreeWalker::default();
     parser.scan(input);
 
     let env = Env::fresh_std_env();

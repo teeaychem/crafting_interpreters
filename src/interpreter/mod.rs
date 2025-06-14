@@ -7,7 +7,7 @@ pub mod environment;
 pub mod evaluation;
 
 mod parser;
-pub use parser::Parser;
+use location::Location;
 
 mod scanner;
 
@@ -20,15 +20,31 @@ use ast::{
 };
 use environment::{Env, EnvHandle};
 use evaluation::value::EvalErr;
+use scanner::token::Tkns;
 
 #[cfg(test)]
 mod tests;
 
-pub struct TreeWalker {}
+#[derive(Debug)]
+pub struct TreeWalker {
+    pub source: String,
+    pub location: Location,
+    pub tokens: Tkns,
+    statements: Statements,
+    index: usize,
+    parse_env: EnvHandle,
+}
 
 impl Default for TreeWalker {
     fn default() -> Self {
-        TreeWalker {}
+        TreeWalker {
+            source: String::default(),
+            location: Location::default(),
+            tokens: Vec::default(),
+            index: 0,
+            statements: Statements::default(),
+            parse_env: Env::fresh_std_env(),
+        }
     }
 }
 

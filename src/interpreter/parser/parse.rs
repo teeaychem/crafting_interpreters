@@ -1,4 +1,5 @@
 use crate::interpreter::{
+    TreeWalker,
     ast::{
         expression::{Expr, ExprB, OpOne, OpTwo},
         identifier::Identifier,
@@ -8,9 +9,9 @@ use crate::interpreter::{
     scanner::token::TknK,
 };
 
-use super::{ParseErr, Parser};
+use super::ParseErr;
 
-impl Parser {
+impl TreeWalker {
     pub fn to_identifier(&self, expr: Expr) -> Result<Identifier, ParseErr> {
         match expr {
             Expr::Identifier { id: i } => Ok(i),
@@ -33,7 +34,7 @@ impl Parser {
     }
 }
 
-impl Parser {
+impl TreeWalker {
     pub fn parse(&mut self) -> Result<(), ParseErr> {
         let env = std::mem::take(&mut self.parse_env);
 
