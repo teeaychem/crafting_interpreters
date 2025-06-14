@@ -1,12 +1,12 @@
 use crate::interpreter::{
-    Parser,
+    TreeWalker,
     location::Location,
     scanner::token::{Tkn, TknK},
 };
 
 #[test]
 fn scanner_basic_numeric() {
-    let mut scanner = Parser::default();
+    let mut scanner = TreeWalker::default();
     scanner.scan("1 0.23\n  1.23");
 
     assert_eq!(
@@ -30,13 +30,13 @@ fn scanner_basic_numeric() {
 
 #[test]
 fn scanner_basic_keyword() {
-    let mut scanner = Parser::default();
-    scanner.scan("not");
-    scanner.scan(" ");
-    scanner.scan("(true and perhaps false)");
+    let mut walker = TreeWalker::default();
+    walker.scan("not");
+    walker.scan(" ");
+    walker.scan("(true and perhaps false)");
 
     assert_eq!(
-        scanner.tokens,
+        walker.tokens,
         vec![
             Tkn {
                 kind: TknK::Identifier {

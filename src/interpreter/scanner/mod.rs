@@ -5,14 +5,14 @@ use crate::interpreter::{
     scanner::token::{Tkn, TknErr, TknK, Tkns},
 };
 
-use super::Parser;
+use super::TreeWalker;
 
 pub mod token;
 
 #[cfg(test)]
 mod scanner_tests;
 
-impl Parser {
+impl TreeWalker {
     // Append `src` to the scanner and tokenize.
     pub fn scan<I: AsRef<str>>(&mut self, src: I) {
         let source_end = self.source.len();
@@ -180,7 +180,7 @@ impl Parser {
     }
 }
 
-impl Parser {
+impl TreeWalker {
     // Consume indefinate whitespace.
     fn eat_whitespace(&mut self, chars: &mut Peekable<Chars<'_>>) {
         'whitespace_loop: loop {
