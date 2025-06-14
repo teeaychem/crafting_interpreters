@@ -102,7 +102,10 @@ impl Interpreter {
                         (block_ctl, block_rtn) = self.interpret(statement, &block_env, base)?;
 
                         match block_ctl {
-                            Control::Break => break 'loop_loop,
+                            Control::Break => {
+                                block_ctl = Control::Proceed; // The break has been handled.
+                                break 'loop_loop;
+                            }
 
                             Control::Proceed => {}
                         };
