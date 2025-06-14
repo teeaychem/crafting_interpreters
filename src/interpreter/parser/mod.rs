@@ -6,6 +6,8 @@ use crate::interpreter::{
     },
 };
 
+use super::environment::{Env, EnvHandle};
+
 mod parse;
 
 #[cfg(test)]
@@ -15,30 +17,32 @@ mod tests;
 pub enum ParseErr {
     CallArgLimit,
     ExpectedAssignment,
+    ExpectedFound { expected: TknK, found: TknK },
     ForInitialiser,
     InvalidAsignee,
     MismatchedParentheses,
     MissingToken,
     OpenStatement,
-    TokensExhausted,
-    ExpectedFound { expected: TknK, found: TknK },
-    Unexpected { found: TknK },
     Todo,
+    TokensExhausted,
+    Unexpected { found: TknK },
 }
 
 #[derive(Debug)]
 pub struct Parser {
-    tokens: Tkns,
+    scanner: Scanner,
     statements: Statements,
     index: usize,
+    parse_env: EnvHandle,
 }
 
 impl From<Scanner> for Parser {
     fn from(value: Scanner) -> Self {
         Self {
-            tokens: value.tokens,
-            statements: Vec::default(),
             index: 0,
+            scanner: value,
+            statements: Vec::default(),
+            parse_env: Env::fresh_std_env(),
         }
     }
 }
@@ -46,16 +50,21 @@ impl From<Scanner> for Parser {
 impl Default for Parser {
     fn default() -> Self {
         Parser {
-            tokens: Tkns::default(),
-            statements: Statements::default(),
             index: 0,
+            scanner: Scanner::default(),
+            statements: Statements::default(),
+            parse_env: Env::fresh_std_env(),
         }
     }
 }
 
 impl Parser {
+    pub fn scan<I: AsRef<str>>(&mut self, src: I) {
+        self.scanner.scan(src);
+    }
+
     pub fn take_scaner(&mut self, scanner: Scanner) {
-        self.tokens = scanner.tokens
+        self.scanner.tokens = scanner.tokens
     }
 
     pub fn statements(&self) -> &Statements {
@@ -69,22 +78,22 @@ impl Parser {
 
 impl Parser {
     pub fn token(&self) -> Option<&Tkn> {
-        self.tokens.get(self.index)
+        self.scanner.tokens.get(self.index)
     }
 
     pub fn token_kind(&self) -> Option<&TknK> {
-        match self.tokens.get(self.index) {
+        match self.scanner.tokens.get(self.index) {
             Some(token) => Some(&token.kind),
             None => None,
         }
     }
 
     pub fn token_ahead(&self, ahead: usize) -> Option<&Tkn> {
-        self.tokens.get(self.index + ahead)
+        self.scanner.tokens.get(self.index + ahead)
     }
 
     pub fn token_kind_ahead(&self, ahead: usize) -> Option<&TknK> {
-        match self.tokens.get(self.index + ahead) {
+        match self.scanner.tokens.get(self.index + ahead) {
             Some(token) => Some(&token.kind),
             None => None,
         }

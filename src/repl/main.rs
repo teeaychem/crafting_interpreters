@@ -2,12 +2,8 @@
 
 use std::io::BufRead;
 
-use loxy_lib::interpreter::{Interpreter, Parser, Scanner};
-
 fn main() {
     println!("Hello, world!");
-
-    let _scanner = Scanner::default();
 
     let stdin = std::io::stdin();
     println!("x");

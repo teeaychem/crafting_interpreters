@@ -8,7 +8,7 @@ pub struct Tkn {
     pub location: Location,
 }
 
-#[allow(non_camel_case_types)]
+#[allow(non_camel_case_types, clippy::upper_case_acronyms)]
 #[derive(Clone, Debug, PartialEq)]
 pub enum TknK {
     // Single character

@@ -34,9 +34,11 @@ impl Parser {
 }
 
 impl Parser {
-    pub fn parse(&mut self, env: &EnvHandle) -> Result<(), ParseErr> {
+    pub fn parse(&mut self) -> Result<(), ParseErr> {
+        let env = std::mem::take(&mut self.parse_env);
+
         loop {
-            match self.declaration(env) {
+            match self.declaration(&env) {
                 Ok(stmt) => self.push_statement(stmt),
 
                 Err(ParseErr::TokensExhausted) => break,
@@ -44,6 +46,8 @@ impl Parser {
                 Err(e) => panic!("{e:?}"),
             }
         }
+
+        std::mem::replace(&mut self.parse_env, env);
 
         Ok(())
     }

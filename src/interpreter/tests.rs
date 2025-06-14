@@ -1,16 +1,13 @@
 use std::io::BufWriter;
 
-use crate::interpreter::{Base, Interpreter, Parser, Scanner, environment::Env};
+use crate::interpreter::{Base, Interpreter, Parser, environment::Env};
 
 fn test_io(input: &str, output: &str) {
-    let mut scanner = Scanner::default();
-    let mut env = Env::fresh_std_env();
-
     let mut parser = Parser::default();
 
-    scanner.scan(input);
-    parser.take_scaner(scanner);
-    match parser.parse(&env) {
+    parser.scan(input);
+
+    match parser.parse() {
         Ok(_) => {}
 
         Err(e) => {
@@ -43,15 +40,12 @@ fn test_io(input: &str, output: &str) {
 
 #[allow(dead_code)]
 fn interpret_stdout(input: &str) {
-    let mut scanner = Scanner::default();
-    let mut env = Env::fresh_std_env();
-
     let mut parser = Parser::default();
     let mut system = Base::default();
 
-    scanner.scan(input);
-    parser.take_scaner(scanner);
-    match parser.parse(&env) {
+    parser.scan(input);
+
+    match parser.parse() {
         Ok(_) => {}
 
         Err(e) => {
