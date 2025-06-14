@@ -1,7 +1,5 @@
 mod conversion;
 
-use std::borrow::Borrow;
-
 use crate::interpreter::environment::EnvErr;
 
 #[derive(Debug, PartialEq)]

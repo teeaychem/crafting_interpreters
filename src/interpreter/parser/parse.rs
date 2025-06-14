@@ -501,7 +501,7 @@ impl TreeWalker {
                     while self.token_kind().is_some_and(|kind| *kind != TknK::ParenR) {
                         args.push(self.expression(env)?);
                         if 255 <= args.len() {
-                            return Err(ParseErr::CallArgLimit);
+                            return Err(ParseErr::ArgLimit);
                         }
 
                         if let Some(TknK::Comma) = self.token_kind() {

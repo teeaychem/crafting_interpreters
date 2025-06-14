@@ -1,9 +1,6 @@
 use std::{iter::Peekable, str::Chars};
 
-use crate::interpreter::{
-    location::Location,
-    scanner::token::{Tkn, TknErr, TknK, Tkns},
-};
+use crate::interpreter::scanner::token::{Tkn, TknErr, TknK};
 
 use super::TreeWalker;
 

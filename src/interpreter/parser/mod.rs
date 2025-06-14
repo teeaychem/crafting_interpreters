@@ -3,12 +3,7 @@ use crate::interpreter::{
     scanner::token::{Tkn, TknK},
 };
 
-use super::{
-    TreeWalker,
-    environment::{Env, EnvHandle},
-    location::Location,
-    scanner::token::Tkns,
-};
+use super::TreeWalker;
 
 mod parse;
 
@@ -17,7 +12,7 @@ mod tests;
 
 #[derive(Debug)]
 pub enum ParseErr {
-    CallArgLimit,
+    ArgLimit,
     ExpectedAssignment,
     ExpectedFound { expected: TknK, found: TknK },
     ForInitialiser,

@@ -5,10 +5,7 @@ pub use operators::{OpOne, OpTwo};
 
 use crate::interpreter::environment::EnvHandle;
 
-use super::{
-    identifier::Identifier,
-    statement::{Statement, Statements},
-};
+use super::{identifier::Identifier, statement::Statements};
 
 #[derive(Clone, Debug)]
 pub enum ExprB {
@@ -64,7 +61,11 @@ impl std::fmt::Display for ExprB {
 
             Self::String { s } => write!(f, "{s}"),
 
-            Self::Lambda { env, params, body } => write!(f, "λ"),
+            Self::Lambda {
+                env: _,
+                params: _,
+                body: _,
+            } => write!(f, "λ"),
         }
     }
 }

@@ -1,15 +1,8 @@
-use std::{
-    cell::{RefCell, RefMut},
-    collections::HashMap,
-    mem::swap,
-    ops::Deref,
-    rc::Rc,
-};
+use std::{cell::RefCell, collections::HashMap, mem::swap, rc::Rc};
 
 use super::ast::{
-    expression::{Expr, ExprB},
+    expression::ExprB,
     identifier::{Id, Identifier},
-    statement::Statements,
 };
 
 pub type Assignments = HashMap<Id, ExprB>;
@@ -54,7 +47,7 @@ impl Env {
         let depth = handle.borrow().depth + 1;
         let enclosing = Some(handle.clone());
 
-        let mut narrow_env = Env {
+        let narrow_env = Env {
             assignments: Assignments::default(),
             enclosing,
             depth,
@@ -120,10 +113,10 @@ impl Env {
 
             None => {
                 let mut offset = 1;
-                let mut ee = self.enclosing();
+                let mut enclosing_env = self.enclosing();
 
                 loop {
-                    match &ee {
+                    match &enclosing_env {
                         Some(ex) => {
                             if ex.borrow().assignments.contains_key(id) {
                                 return Some(offset);
@@ -134,10 +127,8 @@ impl Env {
                     }
 
                     offset += 1;
-                    ee = ee.unwrap().borrow().enclosing();
+                    enclosing_env = enclosing_env.unwrap().borrow().enclosing();
                 }
-
-                None
             }
         }
     }
@@ -146,8 +137,8 @@ impl Env {
 impl std::fmt::Display for Env {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "Env @ {}", self.depth);
-        for (k, v) in &self.assignments {
-            writeln!(f, "\t{k}");
+        for key in self.assignments.keys() {
+            writeln!(f, "\t{key}");
         }
 
         Ok(())
