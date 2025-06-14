@@ -1,14 +1,14 @@
 #[cfg(test)]
 mod evaluation {
     use loxy_lib::interpreter::{
-        Base, Interpreter,
+        Base, TreeWalker,
         ast::expression::{Expr, ExprB, OpOne, OpTwo},
         environment::Env,
     };
 
     #[test]
     fn basic_negation() {
-        let interpreter = Interpreter::default();
+        let interpreter = TreeWalker::default();
         let env = Env::fresh_std_env();
 
         let number = Expr::from(64.0);
@@ -32,7 +32,7 @@ mod evaluation {
 
     #[test]
     fn basic_arithmetic() {
-        let interpreter = Interpreter::default();
+        let interpreter = TreeWalker::default();
         let env = Env::fresh_std_env();
 
         let a_value = 64.0;
@@ -51,7 +51,7 @@ mod evaluation {
 
     #[test]
     fn basic_string() {
-        let interpreter = Interpreter::default();
+        let interpreter = TreeWalker::default();
         let env = Env::fresh_std_env();
 
         let a = Expr::from("a ");
@@ -67,7 +67,7 @@ mod evaluation {
 
     #[test]
     fn basic_comparison() {
-        let interpreter = Interpreter::default();
+        let interpreter = TreeWalker::default();
         let env = Env::fresh_std_env();
 
         let a_value = 64.0;
@@ -88,7 +88,7 @@ mod evaluation {
 
     #[test]
     fn basic_equality() {
-        let interpreter = Interpreter::default();
+        let interpreter = TreeWalker::default();
         let env = Env::fresh_std_env();
 
         let a_value = 64.0;

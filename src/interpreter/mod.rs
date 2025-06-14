@@ -10,7 +10,6 @@ mod parser;
 pub use parser::Parser;
 
 mod scanner;
-pub use scanner::Scanner;
 
 mod base;
 pub use base::Base;
@@ -25,11 +24,11 @@ use evaluation::value::EvalErr;
 #[cfg(test)]
 mod tests;
 
-pub struct Interpreter {}
+pub struct TreeWalker {}
 
-impl Default for Interpreter {
+impl Default for TreeWalker {
     fn default() -> Self {
-        Interpreter {}
+        TreeWalker {}
     }
 }
 
@@ -38,7 +37,7 @@ pub enum Control {
     Proceed,
 }
 
-impl Interpreter {
+impl TreeWalker {
     pub fn interpret(
         &self,
         statement: &Statement,

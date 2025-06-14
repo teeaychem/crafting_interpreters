@@ -1,12 +1,12 @@
 use crate::interpreter::{
-    Scanner,
+    Parser,
     location::Location,
     scanner::token::{Tkn, TknK},
 };
 
 #[test]
 fn scanner_basic_numeric() {
-    let mut scanner = Scanner::default();
+    let mut scanner = Parser::default();
     scanner.scan("1 0.23\n  1.23");
 
     assert_eq!(
@@ -30,7 +30,7 @@ fn scanner_basic_numeric() {
 
 #[test]
 fn scanner_basic_keyword() {
-    let mut scanner = Scanner::default();
+    let mut scanner = Parser::default();
     scanner.scan("not");
     scanner.scan(" ");
     scanner.scan("(true and perhaps false)");
