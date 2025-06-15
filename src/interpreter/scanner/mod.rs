@@ -1,8 +1,11 @@
 use std::{iter::Peekable, str::Chars};
 
-use crate::interpreter::scanner::token::{Tkn, TknErr, TknK};
+use crate::interpreter::scanner::token::{Tkn, TknK};
 
-use super::TreeWalker;
+use super::{
+    TreeWalker,
+    err::{Stumble, StumbleKind},
+};
 
 pub mod token;
 
@@ -40,7 +43,7 @@ impl TreeWalker {
     }
 
     // Take some token from `chars` and store the result.
-    fn take_token(&mut self, chars: &mut Peekable<Chars<'_>>) -> Result<bool, TknErr> {
+    fn take_token(&mut self, chars: &mut Peekable<Chars<'_>>) -> Result<bool, Stumble> {
         self.eat_whitespace(chars);
 
         match chars.peek() {
@@ -165,9 +168,9 @@ impl TreeWalker {
                     }
 
                     unrecognised => {
-                        return Err(TknErr::Unrecognised {
+                        return Err(self.stumble(StumbleKind::Unrecognised {
                             character: *unrecognised,
-                        });
+                        }));
                     }
                 }
 
@@ -198,7 +201,7 @@ impl TreeWalker {
     }
 
     // Consume tokens until a (closing) `"` is found and return the enclosed string.
-    fn get_string(&mut self, chars: &mut Peekable<Chars<'_>>) -> Result<String, TknErr> {
+    fn get_string(&mut self, chars: &mut Peekable<Chars<'_>>) -> Result<String, Stumble> {
         chars.next();
         let mut literal = String::default();
 
@@ -209,7 +212,7 @@ impl TreeWalker {
                     break;
                 }
 
-                '\n' => return Err(TknErr::MultilineString),
+                '\n' => return Err(self.stumble(StumbleKind::MultilineString)),
 
                 _ => {
                     literal.push(*d);
@@ -231,7 +234,7 @@ impl TreeWalker {
     }
 
     // Consume numeric tokens until and f64 is identified.
-    fn get_f64(&mut self, chars: &mut Peekable<Chars<'_>>) -> Result<(f64, usize), TknErr> {
+    fn get_f64(&mut self, chars: &mut Peekable<Chars<'_>>) -> Result<(f64, usize), Stumble> {
         let mut number = String::default();
 
         while let Some(c) = chars.peek() {
@@ -244,7 +247,7 @@ impl TreeWalker {
         }
 
         if let Some('.') = number.chars().last() {
-            return Err(TknErr::TrailingDot);
+            return Err(self.stumble(StumbleKind::TrailingDot));
         }
 
         Ok((number.parse().unwrap(), number.len()))
@@ -254,7 +257,7 @@ impl TreeWalker {
     fn get_keyword_or_identifier(
         &mut self,
         chars: &mut Peekable<Chars<'_>>,
-    ) -> Result<(TknK, usize), TknErr> {
+    ) -> Result<(TknK, usize), Stumble> {
         let mut alphabetic = String::default();
         while let Some(b) = chars.peek() {
             if b.is_alphabetic() || *b == '_' {

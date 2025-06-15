@@ -6,7 +6,7 @@ use crate::interpreter::{
         statement::Statement,
     },
     environment::{Env, EnvHandle},
-    evaluation::value::EvalErr,
+    err::{Stumble, StumbleKind},
 };
 
 impl TreeWalker {
@@ -15,11 +15,11 @@ impl TreeWalker {
         expr: &Expr,
         env: &EnvHandle,
         base: &mut Base,
-    ) -> Result<bool, EvalErr> {
+    ) -> Result<bool, Stumble> {
         match self.eval(expr, env, base)? {
             ExprB::Boolean { b } => Ok(b),
 
-            _ => Err(EvalErr::ConflictingSubexpression),
+            _ => Err(self.stumble(StumbleKind::ConflictingSubexpression)),
         }
     }
 
@@ -28,7 +28,7 @@ impl TreeWalker {
         expr: &Expr,
         env: &EnvHandle,
         base: &mut Base,
-    ) -> Result<f64, EvalErr> {
+    ) -> Result<f64, Stumble> {
         match self.eval(expr, env, base)? {
             ExprB::Numeric { n } => Ok(n),
 
@@ -49,23 +49,23 @@ impl TreeWalker {
         expr: &Expr,
         env: &EnvHandle,
         base: &mut Base,
-    ) -> Result<String, EvalErr> {
+    ) -> Result<String, Stumble> {
         match self.eval(expr, env, base)? {
             ExprB::String { s } => Ok(s.to_owned()),
 
-            _ => Err(EvalErr::ConflictingSubexpression),
+            _ => Err(self.stumble(StumbleKind::ConflictingSubexpression)),
         }
     }
 
-    pub fn get_identifier(&self, expr: Expr) -> Result<Identifier, EvalErr> {
+    pub fn get_identifier(&self, expr: Expr) -> Result<Identifier, Stumble> {
         match expr {
             Expr::Identifier { id: i } => Ok(i),
 
-            _ => Err(EvalErr::InvalidAssignTo),
+            _ => Err(self.stumble(StumbleKind::InvalidAssignTo)),
         }
     }
 
-    pub fn eval(&self, expr: &Expr, env: &EnvHandle, base: &mut Base) -> Result<ExprB, EvalErr> {
+    pub fn eval(&self, expr: &Expr, env: &EnvHandle, base: &mut Base) -> Result<ExprB, Stumble> {
         let value = match expr {
             Expr::Empty => ExprB::Nil,
 
@@ -74,9 +74,9 @@ impl TreeWalker {
             Expr::Identifier { id } => match env.borrow().get(id) {
                 None => {
                     panic!("Id `{id}` not found in the following env: {env:?}");
-                    return Err(EvalErr::InvalidIdentifier {
+                    return Err(self.stumble(StumbleKind::InvalidIdentifier {
                         id: id.name.clone(),
-                    });
+                    }));
                 }
 
                 Some(e) => return Ok(e.to_owned()),
@@ -93,7 +93,7 @@ impl TreeWalker {
                 match env.borrow_mut().assign(id.name(), assignment.clone()) {
                     Ok(_) => {}
 
-                    Err(e) => return Err(EvalErr::EnvErr { err: e }),
+                    Err(e) => return Err(self.stumble(e)),
                 };
 
                 assignment
@@ -135,7 +135,7 @@ impl TreeWalker {
                             ExprB::mk_string(l)
                         }
 
-                        _ => return Err(EvalErr::ConflictingSubexpression),
+                        _ => return Err(self.stumble(StumbleKind::ConflictingSubexpression)),
                     },
 
                     Gt => ExprB::mk_bool(

@@ -9,7 +9,7 @@ pub struct Tkn {
 }
 
 #[allow(non_camel_case_types, clippy::upper_case_acronyms)]
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, PartialOrd)]
 pub enum TknK {
     // Single character
     BraceL,
@@ -84,11 +84,4 @@ impl std::fmt::Display for Tkn {
             _ => write!(f, "Non-literal: {:?}", self.kind),
         }
     }
-}
-
-#[derive(Debug)]
-pub enum TknErr {
-    TrailingDot,
-    MultilineString,
-    Unrecognised { character: char },
 }
