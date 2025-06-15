@@ -3,27 +3,15 @@ use crate::interpreter::{
     scanner::token::{Tkn, TknK},
 };
 
-use super::TreeWalker;
+use super::{
+    TreeWalker,
+    err::{Stumble, StumbleKind},
+};
 
 mod parse;
 
 #[cfg(test)]
 mod tests;
-
-#[derive(Debug)]
-pub enum ParseErr {
-    ArgLimit,
-    ExpectedAssignment,
-    ExpectedFound { expected: TknK, found: TknK },
-    ForInitialiser,
-    InvalidAsignee,
-    MismatchedParentheses,
-    MissingToken,
-    OpenStatement,
-    Todo,
-    TokensExhausted,
-    Unexpected { found: TknK },
-}
 
 impl TreeWalker {
     pub fn statements(&self) -> &Statements {
@@ -58,31 +46,32 @@ impl TreeWalker {
         self.index += 1
     }
 
-    fn check_token(&mut self, check: &TknK) -> Result<(), ParseErr> {
+    fn check_token(&mut self, check: &TknK) -> Result<(), Stumble> {
         match self.token() {
             Some(t) if t.kind == *check => Ok(()),
 
             _ => {
                 println!("Failed to find token {check:?}");
-                Err(ParseErr::MissingToken)
+
+                Err(self.stumble(StumbleKind::MissingToken))
             }
         }
     }
 
-    fn consume(&mut self, check: &TknK) -> Result<(), ParseErr> {
+    fn consume(&mut self, check: &TknK) -> Result<(), Stumble> {
         self.check_token(check)?;
         self.index += 1;
         Ok(())
     }
 
-    fn close_statement(&mut self) -> Result<(), ParseErr> {
+    fn close_statement(&mut self) -> Result<(), Stumble> {
         match self.token() {
             Some(token) if token.kind == TknK::Semicolon => {
                 self.index += 1;
                 Ok(())
             }
 
-            _ => Err(ParseErr::OpenStatement),
+            _ => Err(self.stumble(StumbleKind::OpenStatement)),
         }
     }
 }

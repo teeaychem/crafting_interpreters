@@ -4,9 +4,11 @@ pub mod ast;
 pub mod location;
 
 pub mod environment;
+pub mod err;
 pub mod evaluation;
 
 mod parser;
+use err::Stumble;
 use location::Location;
 
 mod scanner;
@@ -19,7 +21,6 @@ use ast::{
     statement::{Statement, Statements},
 };
 use environment::{Env, EnvHandle};
-use evaluation::value::EvalErr;
 use scanner::token::Tkns;
 
 #[cfg(test)]
@@ -63,7 +64,7 @@ impl TreeWalker {
         statement: &Statement,
         env: &EnvHandle,
         base: &mut Base,
-    ) -> Result<(Control, ExprB), EvalErr> {
+    ) -> Result<(Control, ExprB), Stumble> {
         match statement {
             Statement::Expression { e } => Ok((Control::Proceed, self.eval(e, env, base)?)),
 
@@ -175,7 +176,7 @@ impl TreeWalker {
         }
     }
 
-    pub fn interpret_all(&self, base: &mut Base) -> Result<(), EvalErr> {
+    pub fn interpret_all(&self, base: &mut Base) -> Result<(), Stumble> {
         for statement in &self.statements {
             self.interpret(statement, &self.interpret_env, base)?;
         }
