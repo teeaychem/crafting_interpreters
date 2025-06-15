@@ -29,7 +29,7 @@ pub enum StumbleKind {
 
     TokensExhausted,
 
-    Unexpected { found: TknK },
+    Unexpected(usize),
 
     // Evaluation
     ConflictingSubexpression,
@@ -65,10 +65,32 @@ impl From<EnvErr> for StumbleKind {
 }
 
 impl TreeWalker {
-    pub fn stumble<S: Into<StumbleKind>>(&self, kind: S) -> Stumble {
+    pub fn stumble_here<S: Into<StumbleKind>>(&self, kind: S) -> Stumble {
         Stumble {
-            location: self.location,
+            location: self.parse_location,
             kind: kind.into(),
         }
+    }
+
+    pub fn stumble_token_index<S: Into<StumbleKind>>(&self, kind: S) -> Stumble {
+        let kind = kind.into();
+
+        let location: Location = match kind {
+            StumbleKind::TokensExhausted => self.parse_location,
+
+            StumbleKind::OpenStatement => match self.tokens.get(self.token_index - 1) {
+                None => Location::default(),
+
+                Some(t) => t.location,
+            },
+
+            _ => match self.tokens.get(self.token_index) {
+                None => Location::default(),
+
+                Some(t) => t.location,
+            },
+        };
+
+        Stumble { location, kind }
     }
 }

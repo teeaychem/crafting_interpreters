@@ -38,8 +38,8 @@ impl TreeWalker {
 
     // Store `token` and advance the current location by `advance`.
     fn store_token(&mut self, kind: TknK, advance: usize) {
-        self.tokens.push(Tkn::new(kind, self.location));
-        self.location.advance_col(advance);
+        self.tokens.push(Tkn::new(kind, self.parse_location));
+        self.parse_location.advance_col(advance);
     }
 
     // Take some token from `chars` and store the result.
@@ -168,7 +168,7 @@ impl TreeWalker {
                     }
 
                     unrecognised => {
-                        return Err(self.stumble(StumbleKind::Unrecognised {
+                        return Err(self.stumble_here(StumbleKind::Unrecognised {
                             character: *unrecognised,
                         }));
                     }
@@ -186,9 +186,9 @@ impl TreeWalker {
         'whitespace_loop: loop {
             if let Some(c) = chars.peek() {
                 match c {
-                    '\n' => self.location.newline(),
+                    '\n' => self.parse_location.newline(),
 
-                    w if w.is_whitespace() => self.location.advance_col(1),
+                    w if w.is_whitespace() => self.parse_location.advance_col(1),
 
                     _ => break 'whitespace_loop,
                 }
@@ -212,7 +212,7 @@ impl TreeWalker {
                     break;
                 }
 
-                '\n' => return Err(self.stumble(StumbleKind::MultilineString)),
+                '\n' => return Err(self.stumble_here(StumbleKind::MultilineString)),
 
                 _ => {
                     literal.push(*d);
@@ -230,7 +230,7 @@ impl TreeWalker {
         while chars.peek().is_some_and(|d| *d != c) {
             chars.next();
         }
-        self.location.newline();
+        self.parse_location.newline();
     }
 
     // Consume numeric tokens until and f64 is identified.
@@ -247,7 +247,7 @@ impl TreeWalker {
         }
 
         if let Some('.') = number.chars().last() {
-            return Err(self.stumble(StumbleKind::TrailingDot));
+            return Err(self.stumble_here(StumbleKind::TrailingDot));
         }
 
         Ok((number.parse().unwrap(), number.len()))
