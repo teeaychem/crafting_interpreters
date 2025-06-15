@@ -61,7 +61,7 @@ impl TreeWalker {
         match expr {
             Expr::Identifier { id: i } => Ok(i),
 
-            _ => Err(EvalErr::InvalidAsignTo),
+            _ => Err(EvalErr::InvalidAssignTo),
         }
     }
 

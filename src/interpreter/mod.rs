@@ -32,7 +32,9 @@ pub struct TreeWalker {
     tokens: Tkns,
     statements: Statements,
     index: usize,
+
     parse_env: EnvHandle,
+    interpret_env: EnvHandle,
 }
 
 impl Default for TreeWalker {
@@ -43,7 +45,9 @@ impl Default for TreeWalker {
             tokens: Vec::default(),
             index: 0,
             statements: Statements::default(),
+
             parse_env: Env::fresh_std_env(),
+            interpret_env: Env::fresh_std_env(),
         }
     }
 }
@@ -171,14 +175,9 @@ impl TreeWalker {
         }
     }
 
-    pub fn interpret_all(
-        &self,
-        statements: &Statements,
-        env: &EnvHandle,
-        base: &mut Base,
-    ) -> Result<(), EvalErr> {
-        for statement in statements {
-            self.interpret(statement, env, base)?;
+    pub fn interpret_all(&self, base: &mut Base) -> Result<(), EvalErr> {
+        for statement in &self.statements {
+            self.interpret(statement, &self.interpret_env, base)?;
         }
 
         Ok(())
