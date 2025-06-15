@@ -99,7 +99,7 @@ impl TreeWalker {
         let token = match self.token() {
             Some(tkn) => tkn,
 
-            None => return Err(self.stumble(StumbleKind::TokensExhausted)),
+            None => return Err(self.stumble_token_index(StumbleKind::TokensExhausted)),
         };
 
         match token.kind {
@@ -201,7 +201,7 @@ impl TreeWalker {
 
                     Statement::Empty => {}
 
-                    _ => return Err(self.stumble(StumbleKind::ForInitialiser)),
+                    _ => return Err(self.stumble_token_index(StumbleKind::ForInitialiser)),
                 }
 
                 let condition = match self.expression_delimited(&while_env, &TknK::Semicolon)? {
@@ -240,9 +240,9 @@ impl TreeWalker {
                     }
 
                     _ => {
-                        return Err(self.stumble(StumbleKind::Unexpected {
-                            found: self.token().unwrap().kind.to_owned(),
-                        }));
+                        return Err(
+                            self.stumble_token_index(StumbleKind::Unexpected(self.token_index))
+                        );
                     }
                 };
 
@@ -305,8 +305,12 @@ impl TreeWalker {
             Ok(e) => Ok(e),
 
             Err(e) => {
-                if let StumbleKind::Unexpected { found } = e.kind() {
-                    if found == delimiter {
+                if let StumbleKind::Unexpected(index) = e.kind() {
+                    if self
+                        .tokens
+                        .get(*index)
+                        .is_some_and(|found| found.kind == *delimiter)
+                    {
                         Ok(Expr::Empty)
                     } else {
                         Err(e)
@@ -473,7 +477,7 @@ impl TreeWalker {
 
     fn unary(&mut self, env: &EnvHandle) -> Result<Expr, Stumble> {
         match self.token() {
-            None => Err(self.stumble(StumbleKind::MissingToken)),
+            None => Err(self.stumble_token_index(StumbleKind::MissingToken)),
 
             Some(token) => {
                 let expr = match &token.kind {
@@ -506,7 +510,7 @@ impl TreeWalker {
                     while self.token_kind().is_some_and(|kind| *kind != TknK::ParenR) {
                         args.push(self.expression(env)?);
                         if 255 <= args.len() {
-                            return Err(self.stumble(StumbleKind::ArgLimit));
+                            return Err(self.stumble_token_index(StumbleKind::ArgLimit));
                         }
 
                         if let Some(TknK::Comma) = self.token_kind() {
@@ -528,7 +532,7 @@ impl TreeWalker {
 
     fn primary(&mut self, env: &EnvHandle) -> Result<Expr, Stumble> {
         match self.token() {
-            None => Err(self.stumble(StumbleKind::MissingToken)),
+            None => Err(self.stumble_token_index(StumbleKind::MissingToken)),
 
             Some(token) => {
                 let expr = match &token.kind {
@@ -555,9 +559,9 @@ impl TreeWalker {
                     }
 
                     _ => {
-                        return Err(self.stumble(StumbleKind::Unexpected {
-                            found: token.kind.to_owned(),
-                        }));
+                        return Err(
+                            self.stumble_token_index(StumbleKind::Unexpected(self.token_index))
+                        );
                     }
                 };
 

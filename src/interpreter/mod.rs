@@ -29,10 +29,13 @@ mod tests;
 #[derive(Debug)]
 pub struct TreeWalker {
     source: String,
-    location: Location,
-    tokens: Tkns,
+
+    parse_location: Location,
+
     statements: Statements,
-    index: usize,
+
+    tokens: Tkns,
+    token_index: usize,
 
     parse_env: EnvHandle,
     interpret_env: EnvHandle,
@@ -42,9 +45,9 @@ impl Default for TreeWalker {
     fn default() -> Self {
         TreeWalker {
             source: String::default(),
-            location: Location::default(),
+            parse_location: Location::default(),
             tokens: Vec::default(),
-            index: 0,
+            token_index: 0,
             statements: Statements::default(),
 
             parse_env: Env::fresh_std_env(),

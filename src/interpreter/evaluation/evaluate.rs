@@ -19,7 +19,7 @@ impl TreeWalker {
         match self.eval(expr, env, base)? {
             ExprB::Boolean { b } => Ok(b),
 
-            _ => Err(self.stumble(StumbleKind::ConflictingSubexpression)),
+            _ => Err(self.stumble_token_index(StumbleKind::ConflictingSubexpression)),
         }
     }
 
@@ -53,7 +53,7 @@ impl TreeWalker {
         match self.eval(expr, env, base)? {
             ExprB::String { s } => Ok(s.to_owned()),
 
-            _ => Err(self.stumble(StumbleKind::ConflictingSubexpression)),
+            _ => Err(self.stumble_token_index(StumbleKind::ConflictingSubexpression)),
         }
     }
 
@@ -61,7 +61,7 @@ impl TreeWalker {
         match expr {
             Expr::Identifier { id: i } => Ok(i),
 
-            _ => Err(self.stumble(StumbleKind::InvalidAssignTo)),
+            _ => Err(self.stumble_token_index(StumbleKind::InvalidAssignTo)),
         }
     }
 
@@ -74,7 +74,7 @@ impl TreeWalker {
             Expr::Identifier { id } => match env.borrow().get(id) {
                 None => {
                     panic!("Id `{id}` not found in the following env: {env:?}");
-                    return Err(self.stumble(StumbleKind::InvalidIdentifier {
+                    return Err(self.stumble_token_index(StumbleKind::InvalidIdentifier {
                         id: id.name.clone(),
                     }));
                 }
@@ -93,7 +93,7 @@ impl TreeWalker {
                 match env.borrow_mut().assign(id.name(), assignment.clone()) {
                     Ok(_) => {}
 
-                    Err(e) => return Err(self.stumble(e)),
+                    Err(e) => return Err(self.stumble_token_index(e)),
                 };
 
                 assignment
@@ -135,7 +135,11 @@ impl TreeWalker {
                             ExprB::mk_string(l)
                         }
 
-                        _ => return Err(self.stumble(StumbleKind::ConflictingSubexpression)),
+                        _ => {
+                            return Err(
+                                self.stumble_token_index(StumbleKind::ConflictingSubexpression)
+                            );
+                        }
                     },
 
                     Gt => ExprB::mk_bool(

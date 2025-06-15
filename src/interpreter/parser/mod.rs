@@ -21,29 +21,29 @@ impl TreeWalker {
 
 impl TreeWalker {
     pub fn token(&self) -> Option<&Tkn> {
-        self.tokens.get(self.index)
+        self.tokens.get(self.token_index)
     }
 
     pub fn token_kind(&self) -> Option<&TknK> {
-        match self.tokens.get(self.index) {
+        match self.tokens.get(self.token_index) {
             Some(token) => Some(&token.kind),
             None => None,
         }
     }
 
     pub fn token_ahead(&self, ahead: usize) -> Option<&Tkn> {
-        self.tokens.get(self.index + ahead)
+        self.tokens.get(self.token_index + ahead)
     }
 
     pub fn token_kind_ahead(&self, ahead: usize) -> Option<&TknK> {
-        match self.tokens.get(self.index + ahead) {
+        match self.tokens.get(self.token_index + ahead) {
             Some(token) => Some(&token.kind),
             None => None,
         }
     }
 
     unsafe fn consume_unchecked(&mut self) {
-        self.index += 1
+        self.token_index += 1
     }
 
     fn check_token(&mut self, check: &TknK) -> Result<(), Stumble> {
@@ -53,25 +53,25 @@ impl TreeWalker {
             _ => {
                 println!("Failed to find token {check:?}");
 
-                Err(self.stumble(StumbleKind::MissingToken))
+                Err(self.stumble_token_index(StumbleKind::MissingToken))
             }
         }
     }
 
     fn consume(&mut self, check: &TknK) -> Result<(), Stumble> {
         self.check_token(check)?;
-        self.index += 1;
+        self.token_index += 1;
         Ok(())
     }
 
     fn close_statement(&mut self) -> Result<(), Stumble> {
         match self.token() {
             Some(token) if token.kind == TknK::Semicolon => {
-                self.index += 1;
+                self.token_index += 1;
                 Ok(())
             }
 
-            _ => Err(self.stumble(StumbleKind::OpenStatement)),
+            _ => Err(self.stumble_token_index(StumbleKind::OpenStatement)),
         }
     }
 }
