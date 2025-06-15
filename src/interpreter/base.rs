@@ -3,7 +3,7 @@ pub struct Base<'s> {
 }
 
 impl<'s> Base<'s> {
-    pub fn update_stdio<W: std::io::Write + 's>(&mut self, destination: &'s mut W) {
+    pub fn set_out<W: std::io::Write + 's>(&mut self, destination: &'s mut W) {
         self.stdio = Box::new(destination)
     }
 }

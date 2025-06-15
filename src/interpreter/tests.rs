@@ -1,18 +1,18 @@
 use std::io::BufWriter;
 
-use crate::interpreter::{Base, TreeWalker, environment::Env};
+use crate::interpreter::{Base, TreeWalker};
 
 fn test_io(input: &str, output: &str) {
-    let mut parser = TreeWalker::default();
+    let mut walker = TreeWalker::default();
 
-    parser.scan(input);
+    walker.scan(input);
 
-    match parser.parse() {
+    match walker.parse() {
         Ok(_) => {}
 
         Err(e) => {
             println!("Parser failure: {e:?}");
-            dbg!(&parser);
+            dbg!(&walker);
             panic!();
         }
     };
@@ -21,12 +21,10 @@ fn test_io(input: &str, output: &str) {
     let mut stream = BufWriter::new(&mut buffer);
 
     {
-        let interpreter = TreeWalker::default();
-        let env = Env::fresh_std_env();
         let mut system = Base::default();
-        system.update_stdio(&mut stream);
+        system.set_out(&mut stream);
 
-        match interpreter.interpret_all(parser.statements(), &env, &mut system) {
+        match walker.interpret_all(&mut system) {
             Ok(_) => {}
 
             Err(e) => panic!("Interpretation error: {e:?}"),
@@ -40,25 +38,22 @@ fn test_io(input: &str, output: &str) {
 
 #[allow(dead_code)]
 fn interpret_stdout(input: &str) {
-    let mut parser = TreeWalker::default();
+    let mut walker = TreeWalker::default();
     let mut system = Base::default();
 
-    parser.scan(input);
+    walker.scan(input);
 
-    match parser.parse() {
+    match walker.parse() {
         Ok(_) => {}
 
         Err(e) => {
             println!("Parser failure: {e:?}");
-            dbg!(&parser);
+            dbg!(&walker);
             panic!();
         }
     };
 
-    let interpreter = TreeWalker::default();
-    let env = Env::fresh_std_env();
-
-    match interpreter.interpret_all(parser.statements(), &env, &mut system) {
+    match walker.interpret_all(&mut system) {
         Ok(_) => {}
 
         Err(e) => panic!("Interpretation error: {e:?}"),
