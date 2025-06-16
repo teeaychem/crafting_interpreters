@@ -34,22 +34,27 @@ impl TreeWalker {
 }
 
 impl TreeWalker {
-    pub fn parse(&mut self) -> Result<(), Stumble> {
+    pub fn parse(&mut self) -> Result<usize, Stumble> {
+        let mut statement_count = 0;
+
         let env = std::mem::take(&mut self.parse_env);
 
         loop {
             match self.declaration(&env) {
-                Ok(stmt) => self.statements.push(stmt),
+                Ok(stmt) => {
+                    statement_count += 1;
+                    self.statements.push(stmt)
+                }
 
                 Err(e) if *e.kind() == StumbleKind::TokensExhausted => break,
 
-                Err(e) => panic!("{e:?}"),
+                Err(e) => return Err(e),
             }
         }
 
         std::mem::replace(&mut self.parse_env, env);
 
-        Ok(())
+        Ok(statement_count)
     }
 
     fn declaration(&mut self, env: &EnvHandle) -> Result<Statement, Stumble> {

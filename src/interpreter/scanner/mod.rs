@@ -14,7 +14,7 @@ mod scanner_tests;
 
 impl TreeWalker {
     // Append `src` to the scanner and tokenize.
-    pub fn scan<I: AsRef<str>>(&mut self, src: I) {
+    pub fn scan<I: AsRef<str>>(&mut self, src: I) -> Result<(), Stumble> {
         let source_end = self.source.len();
 
         self.source.push_str(src.as_ref());
@@ -33,7 +33,9 @@ impl TreeWalker {
             }
         }
 
-        while let Ok(true) = self.take_token(&mut chars) {}
+        std::mem::replace(&mut self.source, held_source);
+
+        Ok(())
     }
 
     // Store `token` and advance the current location by `advance`.

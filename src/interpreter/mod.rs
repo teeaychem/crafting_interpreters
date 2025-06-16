@@ -28,7 +28,7 @@ mod tests;
 
 #[derive(Debug)]
 pub struct TreeWalker {
-    source: String,
+    pub source: String,
 
     parse_location: Location,
 
@@ -56,6 +56,7 @@ impl Default for TreeWalker {
     }
 }
 
+#[derive(Debug)]
 pub enum Control {
     Break,
     Proceed,
@@ -181,8 +182,21 @@ impl TreeWalker {
 
     pub fn interpret_all(&self, base: &mut Base) -> Result<(), Stumble> {
         for statement in &self.statements {
-            self.interpret(statement, &self.interpret_env, base)?;
+            println!("Interpreting: {statement:?}");
+            let i = self.interpret(statement, &self.interpret_env, base)?;
+            println!("{i:?}")
         }
+
+        Ok(())
+    }
+
+    pub fn interpret_index(&self, base: &mut Base, index: usize) -> Result<(), Stumble> {
+        let statement = match self.statements.get(index) {
+            Some(stmnt) => stmnt,
+            None => panic!("! Missing statement"),
+        };
+
+        self.interpret(statement, &self.interpret_env, base)?;
 
         Ok(())
     }
