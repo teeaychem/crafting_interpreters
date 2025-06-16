@@ -1,7 +1,7 @@
 #[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
 pub struct Location {
-    col: usize,
-    line: usize,
+    pub col: usize,
+    pub line: usize,
 }
 
 impl Default for Location {

@@ -53,7 +53,7 @@ impl TreeWalker {
             _ => {
                 println!("Failed to find token {check:?}");
 
-                Err(self.stumble_token_index(StumbleKind::MissingToken))
+                Err(self.stumble_token(StumbleKind::MissingToken))
             }
         }
     }
@@ -71,7 +71,7 @@ impl TreeWalker {
                 Ok(())
             }
 
-            _ => Err(self.stumble_token_index(StumbleKind::OpenStatement)),
+            _ => Err(self.stumble_token(StumbleKind::OpenStatement)),
         }
     }
 }

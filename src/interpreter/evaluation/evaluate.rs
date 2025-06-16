@@ -19,7 +19,7 @@ impl TreeWalker {
         match self.eval(expr, env, base)? {
             ExprB::Boolean { b } => Ok(b),
 
-            _ => Err(self.stumble_token_index(StumbleKind::ConflictingSubexpression)),
+            _ => Err(self.stumble_token(StumbleKind::ConflictingSubexpression)),
         }
     }
 
@@ -53,7 +53,7 @@ impl TreeWalker {
         match self.eval(expr, env, base)? {
             ExprB::String { s } => Ok(s.to_owned()),
 
-            _ => Err(self.stumble_token_index(StumbleKind::ConflictingSubexpression)),
+            _ => Err(self.stumble_token(StumbleKind::ConflictingSubexpression)),
         }
     }
 
@@ -61,7 +61,7 @@ impl TreeWalker {
         match expr {
             Expr::Identifier { id: i } => Ok(i),
 
-            _ => Err(self.stumble_token_index(StumbleKind::InvalidAssignTo)),
+            _ => Err(self.stumble_token(StumbleKind::InvalidAssignTo)),
         }
     }
 
@@ -73,7 +73,7 @@ impl TreeWalker {
 
             Expr::Identifier { id } => match env.borrow().get(id) {
                 None => {
-                    return Err(self.stumble_token_index(StumbleKind::InvalidIdentifier {
+                    return Err(self.stumble_token(StumbleKind::InvalidIdentifier {
                         id: id.name.clone(),
                     }));
                 }
@@ -92,7 +92,7 @@ impl TreeWalker {
                 match env.borrow_mut().assign(id.name(), assignment.clone()) {
                     Ok(_) => {}
 
-                    Err(e) => return Err(self.stumble_token_index(e)),
+                    Err(e) => return Err(self.stumble_token(e)),
                 };
 
                 assignment
@@ -135,9 +135,7 @@ impl TreeWalker {
                         }
 
                         _ => {
-                            return Err(
-                                self.stumble_token_index(StumbleKind::ConflictingSubexpression)
-                            );
+                            return Err(self.stumble_token(StumbleKind::ConflictingSubexpression));
                         }
                     },
 
@@ -207,7 +205,7 @@ impl TreeWalker {
                         }
                     }
 
-                    _ => panic!("! Expected lambda"),
+                    _ => return Err(self.stumble_token(StumbleKind::ExpectedLambda)),
                 }
 
                 ExprB::Nil

@@ -87,7 +87,7 @@ impl Env {
 
     pub fn get(&self, id: &Identifier) -> Option<ExprB> {
         match id.offset() {
-            None => panic!("! No offset"),
+            None => None,
 
             Some(0) => self.assignments.get(id.name()).cloned(),
 

@@ -69,9 +69,9 @@ impl TreeWalker {
                     self.expression(env)?
                 }
 
-                Some(_) => Expr::Basic(ExprB::Nil),
+                Some(&TknK::Semicolon) => Expr::Basic(ExprB::Nil),
 
-                None => panic!("! Unexpected EOF"),
+                _ => return Err(self.stumble_token(StumbleKind::ExpectedAssignment)),
             };
 
             env.borrow_mut().insert(d_id.name(), ExprB::Nil);
@@ -104,11 +104,11 @@ impl TreeWalker {
         let token = match self.token() {
             Some(tkn) => tkn,
 
-            None => return Err(self.stumble_token_index(StumbleKind::TokensExhausted)),
+            None => return Err(self.stumble_token(StumbleKind::TokensExhausted)),
         };
 
         match token.kind {
-            TknK::Var => panic!("Higher precedence"),
+            TknK::Var => panic!("! Handled at high precedence"),
 
             TknK::Print => {
                 self.consume(&TknK::Print);
@@ -206,7 +206,7 @@ impl TreeWalker {
 
                     Statement::Empty => {}
 
-                    _ => return Err(self.stumble_token_index(StumbleKind::ForInitialiser)),
+                    _ => return Err(self.stumble_token(StumbleKind::ForInitialiser)),
                 }
 
                 let condition = match self.expression_delimited(&while_env, &TknK::Semicolon)? {
@@ -245,9 +245,7 @@ impl TreeWalker {
                     }
 
                     _ => {
-                        return Err(
-                            self.stumble_token_index(StumbleKind::Unexpected(self.token_index))
-                        );
+                        return Err(self.stumble_token(StumbleKind::Unexpected(self.token_index)));
                     }
                 };
 
@@ -264,7 +262,7 @@ impl TreeWalker {
                 let body = match self.statement(&lambda_env)? {
                     Statement::Block { statements } => statements,
 
-                    _ => panic!("! Block expected"),
+                    _ => return Err(self.stumble_token(StumbleKind::ExpectedBlock)),
                 };
 
                 stmt = Statement::mk_function(id, params, body);
@@ -337,9 +335,7 @@ impl TreeWalker {
                 let offset = match env.borrow().offset(id) {
                     Some(d) => d,
 
-                    None => {
-                        panic!("! No offset found, hek");
-                    }
+                    None => panic!("! No offset found"),
                 };
 
                 let id = Expr::mk_identifier(id.to_owned(), Some(offset));
@@ -482,7 +478,7 @@ impl TreeWalker {
 
     fn unary(&mut self, env: &EnvHandle) -> Result<Expr, Stumble> {
         match self.token() {
-            None => Err(self.stumble_token_index(StumbleKind::MissingToken)),
+            None => Err(self.stumble_token(StumbleKind::MissingToken)),
 
             Some(token) => {
                 let expr = match &token.kind {
@@ -515,7 +511,7 @@ impl TreeWalker {
                     while self.token_kind().is_some_and(|kind| *kind != TknK::ParenR) {
                         args.push(self.expression(env)?);
                         if 255 <= args.len() {
-                            return Err(self.stumble_token_index(StumbleKind::ArgLimit));
+                            return Err(self.stumble_token(StumbleKind::ArgLimit));
                         }
 
                         if let Some(TknK::Comma) = self.token_kind() {
@@ -537,7 +533,7 @@ impl TreeWalker {
 
     fn primary(&mut self, env: &EnvHandle) -> Result<Expr, Stumble> {
         match self.token() {
-            None => Err(self.stumble_token_index(StumbleKind::MissingToken)),
+            None => Err(self.stumble_token(StumbleKind::MissingToken)),
 
             Some(token) => {
                 let expr = match &token.kind {
@@ -564,9 +560,7 @@ impl TreeWalker {
                     }
 
                     _ => {
-                        return Err(
-                            self.stumble_token_index(StumbleKind::Unexpected(self.token_index))
-                        );
+                        return Err(self.stumble_token(StumbleKind::Unexpected(self.token_index)));
                     }
                 };
 

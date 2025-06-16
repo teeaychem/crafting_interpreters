@@ -15,13 +15,11 @@ mod scanner_tests;
 impl TreeWalker {
     // Append `src` to the scanner and tokenize.
     pub fn scan<I: AsRef<str>>(&mut self, src: I) -> Result<(), Stumble> {
-        let source_end = self.source.len();
+        self.source.extend(src.as_ref().chars());
 
-        self.source.push_str(src.as_ref());
+        // let held_source = std::mem::take(&mut self.source);
 
-        let held_source = std::mem::take(&mut self.source);
-
-        let mut chars = held_source[source_end..].chars().peekable();
+        let mut chars = src.as_ref().chars().peekable();
 
         loop {
             match self.take_token(&mut chars) {
@@ -29,11 +27,11 @@ impl TreeWalker {
 
                 Ok(false) => break,
 
-                Err(e) => panic!("! Scanning failed with error: {e:?}"),
+                Err(e) => return Err(e),
             }
         }
 
-        std::mem::replace(&mut self.source, held_source);
+        // std::mem::replace(&mut self.source, held_source);
 
         Ok(())
     }
@@ -188,7 +186,10 @@ impl TreeWalker {
         'whitespace_loop: loop {
             if let Some(c) = chars.peek() {
                 match c {
-                    '\n' => self.parse_location.newline(),
+                    '\n' => {
+                        self.line_breaks.push(self.source.len());
+                        self.parse_location.newline()
+                    }
 
                     w if w.is_whitespace() => self.parse_location.advance_col(1),
 

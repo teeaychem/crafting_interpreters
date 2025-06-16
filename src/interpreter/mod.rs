@@ -28,7 +28,8 @@ mod tests;
 
 #[derive(Debug)]
 pub struct TreeWalker {
-    pub source: String,
+    pub source: Vec<char>,
+    line_breaks: Vec<usize>,
 
     parse_location: Location,
 
@@ -44,7 +45,9 @@ pub struct TreeWalker {
 impl Default for TreeWalker {
     fn default() -> Self {
         TreeWalker {
-            source: String::default(),
+            source: Vec::default(),
+            line_breaks: vec![0],
+
             parse_location: Location::default(),
             tokens: Vec::default(),
             token_index: 0,

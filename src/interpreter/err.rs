@@ -13,7 +13,11 @@ pub enum StumbleKind {
 
     ExpectedAssignment,
 
+    ExpectedBlock,
+
     ExpectedFound { expected: TknK, found: TknK },
+
+    ExpectedLambda,
 
     ForInitialiser,
 
@@ -72,7 +76,7 @@ impl TreeWalker {
         }
     }
 
-    pub fn stumble_token_index<S: Into<StumbleKind>>(&self, kind: S) -> Stumble {
+    pub fn stumble_token<S: Into<StumbleKind>>(&self, kind: S) -> Stumble {
         let kind = kind.into();
 
         let location: Location = match kind {
@@ -95,7 +99,28 @@ impl TreeWalker {
     }
 
     pub fn handle_stumble(&self, stumble: &Stumble) {
-        println!("Oops");
-        println!("{stumble:?}")
+        let line = stumble.location.line;
+        let col = stumble.location.col;
+
+        let src_start = self.line_breaks[line];
+        let src_end = match self.line_breaks.get(line + 1) {
+            Some(v) if *v != src_start => *v,
+            _ => self.source.len() - 1,
+        };
+
+        let kind = &stumble.kind;
+
+        match stumble.kind {
+            StumbleKind::Unexpected(tkn) => {
+                println!("{:?}", self.tokens[tkn])
+            }
+
+            _ => {}
+        }
+
+        let error_line: String = self.source[src_start..src_end].iter().collect();
+
+        println!("Error on line {line} at column {col}: {kind:?}");
+        println!("> {error_line}");
     }
 }

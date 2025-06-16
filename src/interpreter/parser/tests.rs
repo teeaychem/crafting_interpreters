@@ -1,4 +1,4 @@
-use crate::interpreter::{environment::Env, TreeWalker};
+use crate::interpreter::{TreeWalker, environment::Env};
 
 #[test]
 fn simple() {
@@ -46,23 +46,19 @@ fn sync() {
 
     let expr = parser.expression(&env);
 
-    match expr {
-        Ok(_) => panic!("Expected parse error"),
+    assert!(expr.is_err());
 
-        Err(_) => loop {
-            match parser.expression(&env) {
-                Ok(expr) => {
-                    assert_eq!(format!("{expr}"), "(+ 2 2)");
-                    break;
-                }
-                Err(_) => {
-                    if parser.token().is_none() {
-                        panic!("Failed to sync before EOF");
-                    }
+    loop {
+        match parser.expression(&env) {
+            Ok(expr) => return assert_eq!(format!("{expr}"), "(+ 2 2)"),
 
-                    parser.syncronise();
+            Err(_) => {
+                if parser.token().is_none() {
+                    panic!("Failed to sync before EOF");
                 }
+
+                parser.syncronise();
             }
-        },
+        }
     }
 }

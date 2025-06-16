@@ -10,11 +10,7 @@ fn test_io(input: &str, output: &str) {
     match walker.parse() {
         Ok(_) => {}
 
-        Err(e) => {
-            println!("Parser failure: {e:?}");
-            dbg!(&walker);
-            panic!();
-        }
+        Err(e) => panic!("Parser error: {e:?}"),
     };
 
     let mut buffer = Vec::with_capacity(output.len());
@@ -46,11 +42,7 @@ fn interpret_stdout(input: &str) {
     match walker.parse() {
         Ok(_) => {}
 
-        Err(e) => {
-            println!("Parser failure: {e:?}");
-            dbg!(&walker);
-            panic!();
-        }
+        Err(e) => panic!("Parser error: {e:?}"),
     };
 
     match walker.interpret_all(&mut system) {
