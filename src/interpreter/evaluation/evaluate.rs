@@ -73,7 +73,6 @@ impl TreeWalker {
 
             Expr::Identifier { id } => match env.borrow().get(id) {
                 None => {
-                    panic!("Id `{id}` not found in the following env: {env:?}");
                     return Err(self.stumble_token_index(StumbleKind::InvalidIdentifier {
                         id: id.name.clone(),
                     }));

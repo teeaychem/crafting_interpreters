@@ -93,4 +93,9 @@ impl TreeWalker {
 
         Stumble { location, kind }
     }
+
+    pub fn handle_stumble(&self, stumble: &Stumble) {
+        println!("Oops");
+        println!("{stumble:?}")
+    }
 }
