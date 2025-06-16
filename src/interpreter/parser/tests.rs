@@ -1,4 +1,4 @@
-use crate::interpreter::{TreeWalker, environment::Env};
+use crate::interpreter::{environment::Env, TreeWalker};
 
 #[test]
 fn simple() {
@@ -10,11 +10,11 @@ fn simple() {
     let env = Env::fresh_std_env();
     let expr = parser.expression(&env);
 
-    match expr {
-        Ok(expr) => assert_eq!(format!("{expr}"), "(== (! true) false)"),
+    assert!(expr.is_ok());
 
-        Err(_) => panic!("Failed to parse {input}"),
-    }
+    let expr = expr.unwrap();
+
+    assert_eq!(format!("{expr}"), "(== (! true) false)");
 }
 
 #[test]
@@ -28,11 +28,11 @@ fn arithmetic() {
 
     let expr = parser.expression(&env);
 
-    match expr {
-        Ok(expr) => assert_eq!(format!("{expr}"), "(/ 4 (* 3 (- 2)))"),
+    assert!(expr.is_ok());
 
-        Err(_) => panic!("Failed to parse {input}"),
-    }
+    let expr = expr.unwrap();
+
+    assert_eq!(format!("{expr}"), "(/ 4 (* 3 (- 2)))");
 }
 
 #[test]

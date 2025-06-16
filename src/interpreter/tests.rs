@@ -137,8 +137,8 @@ mod blocks {
 var a;
 print a;
 {
-  a = 1;
-  print a;
+    a = 1;
+    print a;
 }
 print a;
 ";
@@ -152,17 +152,17 @@ var a = "global a";
 var b = "global b";
 var c = "global c";
 {
-  var a = "outer a";
-  var b = "outer b";
+    var a = "outer a";
+    var b = "outer b";
   {
-    var a = "inner a";
+        var a = "inner a";
+        print a;
+        print b;
+        print c;
+  }
     print a;
     print b;
     print c;
-  }
-  print a;
-  print b;
-  print c;
 }
 print a;
 print b;
@@ -187,8 +187,8 @@ global c",
         let input = r#"
 var a = 1;
 {
-   var a = a + 2;
-   print a;
+     var a = a + 2;
+     print a;
 }
 "#;
 
@@ -199,8 +199,8 @@ var a = 1;
         let input = r#"
 var a = 1;
 while (a < 4) {
-  print a;
-  a = a + 1;
+    print a;
+    a = a + 1;
 }
 print a;
 "#;
@@ -212,13 +212,13 @@ print a;
         let input = r#"
 var a = 1;
 loop {
-  a = a + 1;
+    a = a + 1;
 
-  if (3 < a) {
-    break;
-  } else {
-    print a;
-  }
+    if (3 < a) {
+        break;
+    } else {
+        print a;
+    }
 }
 print a;
 "#;
@@ -229,14 +229,14 @@ print a;
     fn nested_break() {
         let input = r#"
 for (var a = 0; a < 5; a = a + 1) {
-  if (1 < a) {
-    break;
-  }
-  for (var b = 0; b < 10; b = b + 1) {
-    if (1 < b) {
-      break;
+    if (1 < a) {
+        break;
     }
-    print a + b;
+    for (var b = 0; b < 10; b = b + 1) {
+        if (1 < b) {
+            break;
+        }
+        print a + b;
   }
 }
 
@@ -248,7 +248,7 @@ for (var a = 0; a < 5; a = a + 1) {
     fn for_simple() {
         let input = r#"
 for (var a = 1; a < 5; a = a + 1) {
-  print a;
+    print a;
 }
 "#;
         test_io(input, "1\n2\n3\n4");
@@ -260,9 +260,9 @@ for (var a = 1; a < 5; a = a + 1) {
 var a = 0;
 var temp;
 for (var b = 1; a < 150; b = temp + b) {
-  print a;
-  temp = a;
-  a = b;
+    print a;
+    temp = a;
+    a = b;
 }
 "#;
         test_io(input, "0\n1\n1\n2\n3\n5\n8\n13\n21\n34\n55\n89\n144");
@@ -273,12 +273,12 @@ for (var b = 1; a < 150; b = temp + b) {
         let input = r#"
 var a = "global";
 {
-  fun showA() {
-    print a;
-  }
-  showA();
-  var a = "block";
-  showA();
+    fun showA() {
+        print a;
+    }
+    showA();
+    var a = "block";
+    showA();
 }
 "#;
         test_io(input, "global\nglobal");
@@ -293,21 +293,21 @@ mod logic {
     fn conditional() {
         let input = r#"
 if (false != true)
-  print "ok";
+    print "ok";
 "#;
         test_io(input, "ok");
 
         let input = r#"
 if (false == true)
-  print "nok";
+    print "nok";
 "#;
         test_io(input, "");
 
         let input = r#"
 if (false == true)
-  print "nok";
+    print "nok";
 else
-  print "ok";
+    print "ok";
 "#;
         test_io(input, "ok");
     }
@@ -316,27 +316,27 @@ else
     fn logic_or() {
         let input = r#"
 if (true or true)
-  print "ok";
+    print "ok";
 "#;
         test_io(input, "ok");
 
         let input = r#"
 if (true or false)
-  print "ok";
+    print "ok";
 "#;
         test_io(input, "ok");
 
         let input = r#"
 if (false or true)
-  print "ok";
+    print "ok";
 "#;
         test_io(input, "ok");
 
         let input = r#"
 if (false or false)
-  print "nok";
+    print "nok";
 else
-  print "ok";
+    print "ok";
 "#;
         test_io(input, "ok");
     }
@@ -345,31 +345,31 @@ else
     fn logic_and() {
         let input = r#"
 if (true and true)
-  print "ok";
+    print "ok";
 "#;
         test_io(input, "ok");
 
         let input = r#"
 if (true and false)
-  print "nok";
+    print "nok";
 else
-  print "ok";
+    print "ok";
 "#;
         test_io(input, "ok");
 
         let input = r#"
 if (false and true)
-  print "nok";
+    print "nok";
 else
-  print "ok";
+    print "ok";
 "#;
         test_io(input, "ok");
 
         let input = r#"
 if (false and false)
-  print "nok";
+    print "nok";
 else
-  print "ok";
+    print "ok";
 "#;
         test_io(input, "ok");
     }
@@ -379,7 +379,7 @@ else
         let input = r#"
 var a = 2 * 2;
 if ((a or false) and 2 / 2 == 1)
-  print a;
+    print a;
 "#;
         test_io(input, "4");
     }
@@ -394,11 +394,11 @@ mod calls {
         let input = r#"
 
 fun back() {
-  fun forward() {
-    return 2;
-  }
+    fun forward() {
+        return 2;
+    }
 
-  return forward;
+    return forward;
 }
 
 print back()();
@@ -410,7 +410,7 @@ print back()();
     fn fn_ternary_addition() {
         let input = r#"
 fun add(a, b, c) {
-  return a + b + c;
+    return a + b + c;
 }
 
 print add(1, 2, 3);
